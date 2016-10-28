@@ -46,7 +46,7 @@ let networkInfo = new NetworkInfo({
 
 ### #listInterfaces
 
-Lists available interfaces, optionally filtered according to [options](#options) provided to the [constructor](#constructor).
+Lists available interfaces, optionally filtered according to [options](#options-optional) provided to the [constructor](#constructor).
 
 `networkInfo.listInterfaces()`
 
