@@ -13,7 +13,8 @@ const
 	debug = logger('simple-ifconfig'),
 	DEFAULT_OPTIONS = {
 		ifconfigPath : '/sbin/ifconfig',
-		includeLoopback : false
+		includeLoopback : false,
+		includeIPv6 : true
 	},
 	RE_LINUX_ADDR = /^addr\:/i,
 	RE_LINUX_BCAST = /^bcast\:/i,
@@ -21,6 +22,7 @@ const
 	RE_IFCONFIG_IPV4 = /^inet\s/,
 	RE_IFCONFIG_IPV6 = /^inet6\s/,
 	RE_IPV4 = /^ipv4$/i,
+	RE_IPV6 = /^ipv6$/i,
 	RE_UNIX_BCAST = /^broadcast$/i,
 	RE_UNIX_MASK = /^netmask$/i,
 	VERBOSE = '-v';
@@ -112,7 +114,9 @@ function _initInterfaces () {
 				})
 				// filter out loopback interfaces if necessary
 				.filter((iface) => (
-					this.options.includeLoopback || !iface.internal)))));
+					this.options.includeLoopback || !iface.internal))
+				.filter((iface) => (
+					this.options.includeIPv6 || !RE_IPV6.test(iface.family))))));
 }
 
 function _isNullOrUndefined (value) {
@@ -198,6 +202,8 @@ function _parseInterfaceInfo (ifconfigResult) {
 
 export class NetworkInfo {
 	constructor (options) {
+		debug('new NetworkInfo(%o)', options);
+
 		this._interfaces = [];
 		this.options = options || {};
 
