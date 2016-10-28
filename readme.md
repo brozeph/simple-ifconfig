@@ -28,7 +28,7 @@ Creates a new instance of the `NetworkInfo` class that allows for interaction wi
 * `includeIPv6` (optional, `Boolean`) - defaults to `true` when not provided; when `false`, IPv6 information for all adapters is excluded when interacting with various other module methods
 
 ```javascript
-import NetworkInfo from 'simple-ifconfig';
+import {NetworkInfo} from 'simple-ifconfig';
 
 const
   ifconfigPath = '/sbin/ifconfg',
