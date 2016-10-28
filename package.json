@@ -1,0 +1,44 @@
+{
+  "name": "simple-ifconfig",
+  "description": "a client library for interacting with ifconfig on *nix machines",
+  "private": false,
+  "version": "0.1.0",
+  "author": "Joshua Thomas (http://github.com/brozeph)",
+  "engine": "node >= 4",
+  "keywords": [
+    "ifconfig"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "ssh://git@github.org:brozeph/simple-ifconfig.git"
+  },
+  "main": "./dist",
+  "scripts": {
+    "prepublish": "gulp build",
+    "test": "gulp lint && gulp test-integration && gulp test-coverage"
+  },
+  "directories": {
+    "test": "test"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "babel-polyfill": "^6.16.0",
+    "debug": "^2.2.0",
+    "source-map-support": "^0.4.5"
+  },
+  "devDependencies": {
+    "babel-eslint": "^7.0.0",
+    "babel-preset-es2015": "^6.18.0",
+    "babel-preset-stage-0": "^6.16.0",
+    "chai": "^3.5.0",
+    "del": "^2.2.2",
+    "gulp": "^3.9.1",
+    "gulp-babel": "^6.1.2",
+    "gulp-coveralls": "^0.1.4",
+    "gulp-eslint": "^3.0.1",
+    "gulp-istanbul": "^1.1.1",
+    "gulp-mocha": "^3.0.1",
+    "gulp-sourcemaps": "^2.2.0",
+    "gulp-util": "^3.0.7"
+  }
+}

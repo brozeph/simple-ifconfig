@@ -1,0 +1,7 @@
+.DS_Store
+.git
+node_modules
+reports
+notes.md
+/src/
+/test/sandbox/
