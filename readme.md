@@ -35,11 +35,13 @@ const
   includeLoopback = false,
   includeIPV6 = true;
 
-let network = new NetworkInfo({
+let networkInfo = new NetworkInfo({
   ifconfigPath,
   includeLoopback,
   includeIPv6
 });
+
+// work with networkInfo...
 ```
 
 ### #listInterfaces
