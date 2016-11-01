@@ -51,7 +51,7 @@ Lists available interfaces, optionally filtered according to [options](#options-
 `networkInfo.listInterfaces()`
 
 ```javascript
-import {NetworkInfo} from 'simple-ifconfig';
+import { NetworkInfo } from 'simple-ifconfig';
 
 let ipv4 = new NetworkInfo({ includeIPv6 : false });
 
