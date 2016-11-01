@@ -32,13 +32,11 @@ import {NetworkInfo} from 'simple-ifconfig';
 
 const
   ifconfigPath = '/sbin/ifconfg',
-  includeLoopback = false,
-  includeIPV6 = true;
+  includeLoopback = false;
 
 let networkInfo = new NetworkInfo({
   ifconfigPath,
-  includeLoopback,
-  includeIPv6
+  includeLoopback
 });
 
 // work with networkInfo...
