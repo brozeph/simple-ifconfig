@@ -13,8 +13,7 @@ const
 	debug = logger('simple-ifconfig'),
 	DEFAULT_OPTIONS = {
 		ifconfigPath : '/sbin/ifconfig',
-		includeLoopback : false,
-		includeIPv6 : true
+		includeLoopback : false
 	},
 	RE_FLAGS = /^\s*flags\=/,
 	RE_FLAGS_LOOPBACK = /(^|\s+)loopback($|\s+)/i,
