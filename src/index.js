@@ -11,45 +11,80 @@ const
 	BASE_16 = 16,
 	CHAR_ADVANCE = 2,
 	debug = logger('simple-ifconfig'),
+	DEFAULT_HARDWARE_ADDRESS = '00:00:00:00:00:00',
 	DEFAULT_OPTIONS = {
 		ifconfigPath : '/sbin/ifconfig',
-		includeLoopback : false
+		includeInternal : false
 	},
-	RE_FLAGS = /^\s*flags\=/,
-	RE_FLAGS_LOOPBACK = /(^|\s+)loopback($|\s+)/i,
-	RE_FLAGS_PROMISCUOUS = /(^|\s+)promisc($|\s+)/i,
-	RE_FLAGS_UP = /(^|\s+)up($|\s+)/i,
+	DEFAULT_METRIC = 99,
+	RE_DELIM = /\ |\:/,
+	// http://www-01.ibm.com/support/docview.wss?uid=isg3T1019709
+	// http://docs.oracle.com/cd/E19253-01/816-5166/6mbb1kq31/#INTERFACE%20FLAGS
+	RE_FLAGS = {
+		addrconf : /(^|[\ \t\,]*)addrconf($|[\ \t\,]*)/i,
+		allmulti : /(^|[\ \t\,]*)allmulti($|[\ \t\,]*)/i,
+		anycast : /(^|[\ \t\,]*)anycast($|[\ \t\,]*)/i,
+		broadcast : /(^|[\ \t\,]*)broadcast($|[\ \t\,]*)/i,
+		cluif : /(^|[\ \t\,]*)cluif($|[\ \t\,]*)/i,
+		cos : /(^|[\ \t\,]*)cos($|[\ \t\,]*)/i,
+		debug : /(^|[\ \t\,]*)debug($|[\ \t\,]*)/i,
+		deprecated : /(^|[\ \t\,]*)deprecated($|[\ \t\,]*)/i,
+		dhcp : /(^|[\ \t\,]*)dhcp($|[\ \t\,]*)/i,
+		duplicate : /(^|[\ \t\,]*)duplicate($|[\ \t\,]*)/i,
+		failed : /(^|[\ \t\,]*)failed($|[\ \t\,]*)/i,
+		fixedmtu : /(^|[\ \t\,]*)fixedmtu($|[\ \t\,]*)/i,
+		grouprt : /(^|[\ \t\,]*)grouprt($|[\ \t\,]*)/i,
+		inactive : /(^|[\ \t\,]*)inactive($|[\ \t\,]*)/i,
+		loopback : /(^|[\ \t\,]*)loopback($|[\ \t\,]*)/i,
+		mip : /(^|[\ \t\,]*)mip($|[\ \t\,]*)/i,
+		multibcast : /(^|[\ \t\,]*)multi_bcast($|[\ \t\,]*)/i,
+		multicast : /(^|[\ \t\,]*)multicast($|[\ \t\,]*)/i,
+		multinet : /(^|[\ \t\,]*)multinet($|[\ \t\,]*)/i,
+		noarp : /(^|[\ \t\,]*)noarp($|[\ \t\,]*)/i,
+		nochecksum : /(^|[\ \t\,]*)nochecksum($|[\ \t\,]*)/i,
+		nofailover : /(^|[\ \t\,]*)nofailover($|[\ \t\,]*)/i,
+		nolocal : /(^|[\ \t\,]*)nolocal($|[\ \t\,]*)/i,
+		nonud : /(^|[\ \t\,]*)nonud($|[\ \t\,]*)/i,
+		nortexch : /(^|[\ \t\,]*)notexch($|[\ \t\,]*)/i,
+		notrailers : /(^|[\ \t\,]*)notrailers($|[\ \t\,]*)/i,
+		noxmit : /(^|[\ \t\,]*)noxmit($|[\ \t\,]*)/i,
+		oactive : /(^|[\ \t\,]*)oactive($|[\ \t\,]*)/i,
+		offline : /(^|[\ \t\,]*)offline($|[\ \t\,]*)/i,
+		pfcopyall : /(^|[\ \t\,]*)pfcopyall($|[\ \t\,]*)/i,
+		pointopoint : /(^|[\ \t\,]*)pointopoint($|[\ \t\,]*)/i,
+		preferred : /(^|[\ \t\,]*)preferred($|[\ \t\,]*)/i,
+		private : /(^|[\ \t\,]*)private($|[\ \t\,]*)/i,
+		pseg : /(^|[\ \t\,]*)pseg($|[\ \t\,]*)/i,
+	 	promisc : /(^|[\ \t\,]*)promisc($|[\ \t\,]*)/i,
+		quorumloss : /(^|[\ \t\,]*)quorumloss($|[\ \t\,]*)/i,
+		router : /(^|[\ \t\,]*)router($|[\ \t\,]*)/i,
+		running : /(^|[\ \t\,]*)running($|[\ \t\,]*)/i,
+		simplex : /(^|[\ \t\,]*)simplex($|[\ \t\,]*)/i,
+		smart : /(^|[\ \t\,]*)smart($|[\ \t\,]*)/i,
+		standby : /(^|[\ \t\,]*)standby($|[\ \t\,]*)/i,
+		temporary : /(^|[\ \t\,]*)temporary($|[\ \t\,]*)/i,
+		unnumbered : /(^|[\ \t\,]*)unnumbered($|[\ \t\,]*)/i,
+	 	up : /(^|[\ \t\,]*)up($|[\ \t\,]*)/i,
+		virtual : /(^|[\ \t\,]*)virtual($|[\ \t\,]*)/i,
+		varmtu : /(^|[\ \t\,]*)var\_mtu($|[\ \t\,]*)/i,
+		xresolv : /(^|[\ \t\,]*)xresolv($|[\ \t\,]*)/i
+	},
+	RE_HARDWAREADDRESS = /(ether|hwaddr)\ +(([0-9a-h]{2}\:{0,1}){6})/i,
+	RE_IFCONFIG_FLAGS = /<?([a-z\,\ \t\_]*)\>?(([\ \t]*mtu[\:\ \t]+[0-9]+)|([\ \t]*metric[\:\ \t]+[0-9]+)|([\ \t]*index[\:\ \t]+[0-9]+))+/i,
 	RE_IFCONFIG_IPV4 = /^\s*inet\s/,
 	RE_IFCONFIG_IPV6 = /^\s*inet6\s/,
+	RE_INDEX = /index[\ \:]+[0-9]+/i,
 	RE_IPV4 = /^ipv4$/i,
 	RE_IPV6 = /^ipv6$/i,
 	RE_LINUX_ADDR = /^addr\:/i,
 	RE_LINUX_BCAST = /^bcast\:/i,
 	RE_LINUX_MASK = /^mask\:/i,
+	RE_METRIC = /metric[\ \:]+[0-9]+/i,
+	RE_MTU = /mtu[\ \:]+[0-9]+/i,
 	RE_UNIX_ADDR = /^inet$/i,
 	RE_UNIX_BCAST = /^broadcast$/i,
-	RE_UNIX_FLAGS_EXTRACT = /[.]*\<([a-z\,\s]*)\>[.]*/i,
 	RE_UNIX_MASK = /^netmask$/i,
 	VERBOSE = '-v';
-
-/*
-function _ensureBroadcast (iface) {
-	// if broadcast already exists, don't look it up again
-	if (iface.broadcast || !RE_IPV4.test(iface.family)) {
-		return Promise.resolve(iface);
-	}
-
-	// parse the broadcast from the results of the ifconfig command
-	return this::_ifconfig(VERBOSE, iface.name)
-		.then((result) => Promise.resolve(this::_parseInterfaceInfo(result)))
-		.then((info) => {
-			// assign the broadcast address to the interface
-			iface.broadcast = info.broadcast
-
-			return Promise.resolve(iface);
-		});
-}
-//*/
 
 function _ensureDefaultOptions () {
 	Object
@@ -80,26 +115,6 @@ function _ensureInterfaces () {
 			})
 			.catch(reject);
 	});
-
-	/*
-	let networkInterfaceInfo = os.networkInterfaces();
-
-	// collect network interface information
-	Object
-		.getOwnPropertyNames(networkInterfaceInfo)
-		.forEach((name) => (this._interfaces
-			.splice(0, 0, ...networkInterfaceInfo[name]
-				// add name to each interface
-				.map((iface) => {
-					iface.name = name;
-					return iface;
-				})
-				// filter out loopback interfaces if necessary
-				.filter((iface) => (
-					this.options.includeLoopback || !iface.internal))
-				.filter((iface) => (
-					this.options.includeIPv6 || !RE_IPV6.test(iface.family))))));
-	//*/
 }
 
 function _ifconfig (...args) {
@@ -147,48 +162,105 @@ function _isNullOrUndefined (value) {
 }
 
 function _parseInterfaceInfo (ifconfigResult) {
-	let iface;
+	let
+		hardwareInterfaces = new Map(),
+		iface;
 
+	// ensure an entry for the default hardware address
+	hardwareInterfaces.set(DEFAULT_HARDWARE_ADDRESS, []);
+
+	// break the ifconfig command result into lines and parse them 1 by 1...
 	ifconfigResult.split(/\r?\n/).forEach((line) => {
+		let terms;
+
 		// look for a new interface line
 		if (!/\s/.test(line.charAt(0))) {
 			// split the line on spaces (and optionally a colon)
 			line = line.split(/\:?\s/);
 
+			// prior to creating a new iface, check to see if the previously parsed
+			// one should be added to the map
+			if (iface && iface.hardwareAddress === DEFAULT_HARDWARE_ADDRESS) {
+				hardwareInterfaces.get(iface.hardwareAddress).push(iface);
+			}
+
 			// create new iface...
-			iface = {};
+			iface = {
+				hardwareAddress : DEFAULT_HARDWARE_ADDRESS,
+				internal : true
+			};
 
 			// assign the name using the first term in the line
 			iface.name = line[0];
 
 			// ensure we properly parsed a name for the interface
-			if (iface.name) {
-				this._interfaces.push(iface);
+			if (!iface.name) {
+				return;
 			}
 
-			// rebuild the line minus the adapter name
+			// rebuild the line minus the adapter name and continue processing
 			line = line.slice(1).join(' ');
 		}
 
-		// look for UNIX style flag information
-		if (RE_FLAGS.test(line)) {
-			// sanitize the flags
-			line = line.match(RE_UNIX_FLAGS_EXTRACT)[1].replace(/\,\s*/g, ' ');
+		if (RE_HARDWAREADDRESS.test(line)) {
+			terms = line.match(RE_HARDWAREADDRESS);
+			debug(
+				'hardware address of %s found for interface %s',
+				terms[2],
+				iface.name);
+			iface.hardwareAddress = terms[2];
+			iface.internal = false;
 
-			debug('Interface flags found: %s', line);
+			if (hardwareInterfaces.has(iface.hardwareAddress)) {
+				debug(
+					'multiple interfaces found using hardware address %s',
+					iface.hardwareAddress);
 
-			iface.active = RE_FLAGS_UP.test(line);
-			iface.loopback = RE_FLAGS_LOOPBACK.test(line);
-			iface.promiscuous = RE_FLAGS_PROMISCUOUS.test(line);
+				hardwareInterfaces.get(iface.hardwareAddress).push(iface);
+			} else {
+				hardwareInterfaces.set(iface.hardwareAddress, [iface]);
+			}
+		}
+
+		// look for flag information and process
+		if (RE_IFCONFIG_FLAGS.test(line)) {
+			debug('interface flags found for interface %s (%s)', iface.name, line);
+			iface.flags = {};
+
+			// map flags to the interface
+			Object.keys(RE_FLAGS).forEach((flagName) => {
+				if (RE_FLAGS[flagName].test(line)) {
+					debug('flag %s found for interface %s', flagName, iface.name);
+					iface.flags[flagName] = true;
+				}
+			});
+
+			if (RE_INDEX.test(line)) {
+				terms = line.match(RE_INDEX)[0].split(RE_DELIM);
+				debug('index of %d found for interface %s', terms[1], iface.name);
+				iface.index = parseInt(terms[1], 10);
+			}
+
+			if (RE_METRIC.test(line)) {
+				terms = line.match(RE_METRIC)[0].split(RE_DELIM);
+				debug('metric of %d found for interface %s', terms[1], iface.name);
+				iface.metric = parseInt(terms[1], 10);
+			}
+
+			if (RE_MTU.test(line)) {
+				terms = line.match(RE_MTU)[0].split(RE_DELIM);
+				debug('mtu of %d found for interface %s', terms[1], iface.name);
+				iface.mtu = parseInt(terms[1], 10);
+			}
 
 			return;
 		}
 
 		// look for IPv4 info...
 		if (RE_IFCONFIG_IPV4.test(line)) {
-			debug('IPv4 information found: %s', line);
+			debug('IPv4 information found for interface %s', iface.name);
 
-			let terms = line.split(/\s+/);
+			terms = line.split(/\s+/);
 
 			terms.forEach((term, i) => {
 				// linux formatting - addr:10.0.2.15
@@ -247,10 +319,28 @@ function _parseInterfaceInfo (ifconfigResult) {
 		}
 
 		// look for IPv6 info
+		/*
 		if (RE_IFCONFIG_IPV6.test(line)) {
-			debug('IPv6 information found: %s', line);
+			debug('IPv6 information found for interface %s', iface.name);
 		}
+		//*/
 	});
+
+	// pick up any trailing interfaces where the hardware address was not defined
+	if (iface && iface.hardwareAddress === DEFAULT_HARDWARE_ADDRESS) {
+		hardwareInterfaces.get(iface.hardwareAddress).push(iface);
+	}
+
+	// populate the internal interfaces array
+	hardwareInterfaces.forEach((interfaces, hardwareAddress) => {
+		this._interfaces = this._interfaces
+			.concat(interfaces
+				// filter internal interfaces as applicable
+				.filter((iface) => this.options.includeInternal || !iface.internal));
+	});
+
+	this._interfaces.sort((a, b) => (
+		(a.metric || a.index || DEFAULT_METRIC) - (b.metric || b.index || DEFAULT_METRIC)));
 
 	return this._interfaces;
 }
