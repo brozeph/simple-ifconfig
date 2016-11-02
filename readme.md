@@ -29,7 +29,7 @@ Creates a new instance of the `NetworkInfo` class that allows for interaction wi
 * `includeInternal` (_optional_, `Boolean`) - defaults to `false` when not provided; when `true`, loopback adapters are included when interacting with various other module methods
 
 ```javascript
-import {NetworkInfo} from 'simple-ifconfig';
+import { NetworkInfo } from 'simple-ifconfig';
 
 const
   ifconfigPath = '/sbin/ifconfg',
