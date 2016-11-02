@@ -52,7 +52,7 @@ Retrieves an array of available interfaces, optionally filtered according to [op
 ```javascript
 import { NetworkInfo } from 'simple-ifconfig';
 
-let networking = new NetworkInfo({ includeIPv6 : false });
+let networking = new NetworkInfo();
 
 networking.listInterfaces()
   .then(console.log)
