@@ -69,7 +69,7 @@ const
 		varmtu : /(^|[\ \t\,]*)var\_mtu($|[\ \t\,]*)/i,
 		xresolv : /(^|[\ \t\,]*)xresolv($|[\ \t\,]*)/i
 	},
-	RE_HARDWAREADDRESS = /(ether|hwaddr)\ +(([0-9a-h]{2}\:{0,1}){6})/i,
+	RE_HARDWAREADDRESS = /(ether|hwaddr)\ +(([0-9a-f]{2}[\:\-]{0,1}){6})/i,
 	RE_IFCONFIG_FLAGS = /<?([a-z\,\ \t\_]*)\>?(([\ \t]*mtu[\:\ \t]+[0-9]+)|([\ \t]*metric[\:\ \t]+[0-9]+)|([\ \t]*index[\:\ \t]+[0-9]+))+/i,
 	RE_IFCONFIG_IPV4 = /^\s*inet\s/,
 	RE_IFCONFIG_IPV6 = /^\s*inet6\s/,
@@ -83,6 +83,8 @@ const
 	RE_MTU = /mtu[\ \:]+[0-9]+/i,
 	RE_UNIX_ADDR = /^inet$/i,
 	RE_UNIX_BCAST = /^broadcast$/i,
+	RE_UNIX_IPV6_ADDR = /^inet6$/i,
+	RE_UNIX_IPV6_PREFIX_LENGTH = /^prefixlen$/i,
 	RE_UNIX_MASK = /^netmask$/i,
 	VERBOSE = '-v';
 
@@ -176,7 +178,7 @@ function _parseInterfaceInfo (ifconfigResult) {
 		// look for a new interface line
 		if (!/\s/.test(line.charAt(0))) {
 			// split the line on spaces (and optionally a colon)
-			line = line.split(/\:?\s/);
+			line = line.split(/\:?\ +/);
 
 			// prior to creating a new iface, check to see if the previously parsed
 			// one should be added to the map
@@ -260,30 +262,32 @@ function _parseInterfaceInfo (ifconfigResult) {
 		if (RE_IFCONFIG_IPV4.test(line)) {
 			debug('IPv4 information found for interface %s', iface.name);
 
+
+			iface.ipv4 = iface.ipv4 || {};
 			terms = line.split(/\s+/);
 
 			terms.forEach((term, i) => {
 				// linux formatting - addr:10.0.2.15
 				if (RE_LINUX_ADDR.test(term)) {
-					iface.address = term.split(RE_LINUX_ADDR)[1];
+					iface.ipv4.address = term.split(RE_LINUX_ADDR)[1];
 					return;
 				}
 
 				// linux formatting - Bcast:10.0.2.255
 				if (RE_LINUX_BCAST.test(term)) {
-					iface.broadcast = term.split(RE_LINUX_BCAST)[1];
+					iface.ipv4.broadcast = term.split(RE_LINUX_BCAST)[1];
 					return;
 				}
 
 				// linux formatting - Mask:255.255.255.0
 				if (RE_LINUX_MASK.test(term)) {
-					iface.netmask = term.split(RE_LINUX_MASK)[1];
+					iface.ipv4.netmask = term.split(RE_LINUX_MASK)[1];
 					return;
 				}
 
 				// unix formatting - address is 1st term
 				if (RE_UNIX_ADDR.test(term)) {
-					iface.address = terms[i + 1];
+					iface.ipv4.address = terms[i + 1];
 					return;
 				}
 
@@ -295,9 +299,9 @@ function _parseInterfaceInfo (ifconfigResult) {
 					if (/^0x/.test(netmask)) {
 						// iterate 2 chars at a time converting from hex to decimal
 						for (let i = CHAR_ADVANCE; i < netmask.length; i += CHAR_ADVANCE) {
-							iface.netmask = [
-								iface.netmask || '',
-								iface.netmask ? '.' : '',
+							iface.ipv4.netmask = [
+								iface.ipv4.netmask || '',
+								iface.ipv4.netmask ? '.' : '',
 								parseInt(
 									['0x', netmask.slice(i, i + CHAR_ADVANCE)].join(''),
 									BASE_16)].join('');
@@ -307,23 +311,47 @@ function _parseInterfaceInfo (ifconfigResult) {
 					}
 
 					// set netmask in teh event it is not in hexidecimal format
-					iface.netmask = netmask;
+					iface.ipv4.netmask = netmask;
 					return;
 				}
 
 				// unix formatting - broadcast 10.129.8.255
 				if (RE_UNIX_BCAST.test(term)) {
-					iface.broadcast = terms[i + 1];
+					iface.ipv4.broadcast = terms[i + 1];
 				}
 			});
 		}
 
 		// look for IPv6 info
-		/*
 		if (RE_IFCONFIG_IPV6.test(line)) {
 			debug('IPv6 information found for interface %s', iface.name);
+
+			iface.ipv6 = iface.ipv6 || {};
+			terms = line.split(/\ +/);
+
+			terms.some((term, i) => {
+				// check for linux address reference
+				if (RE_LINUX_ADDR.test(term)) {
+					terms = terms[i + 1].split(/\//);
+					iface.ipv6.address = terms[0];
+					iface.ipv6.prefixLength = terms[1]
+
+					return true;
+				}
+
+				if (RE_UNIX_IPV6_ADDR.test(term.trim())) {
+					iface.ipv6.address = terms[i + 1].split(/\%/)[0];
+				}
+
+				if (RE_UNIX_IPV6_PREFIX_LENGTH.test(term)) {
+					iface.ipv6.prefixLength = parseInt(terms[i + 1], 10);
+
+					return true;
+				}
+
+				return false;
+			});
 		}
-		//*/
 	});
 
 	// pick up any trailing interfaces where the hardware address was not defined
