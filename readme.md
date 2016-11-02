@@ -47,7 +47,7 @@ let networking = new NetworkInfo({
 
 Retrieves an array of available interfaces, optionally filtered according to [options](#options-optional) provided to the [constructor](#constructor).
 
-`networkInfo.listInterfaces()`
+`new NetworkInfo().listInterfaces()`
 
 ```javascript
 import { NetworkInfo } from 'simple-ifconfig';
