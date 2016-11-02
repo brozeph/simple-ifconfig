@@ -35,12 +35,12 @@ const
   ifconfigPath = '/sbin/ifconfg',
   includeInternal = false;
 
-let networkInfo = new NetworkInfo({
+let networking = new NetworkInfo({
   ifconfigPath,
   includeInternal
 });
 
-// work with networkInfo...
+// work with networking instance...
 ```
 
 ### #listInterfaces
@@ -52,9 +52,9 @@ Retrieves an array of available interfaces, optionally filtered according to [op
 ```javascript
 import { NetworkInfo } from 'simple-ifconfig';
 
-let ipv4 = new NetworkInfo({ includeIPv6 : false });
+let networking = new NetworkInfo({ includeIPv6 : false });
 
-ipv4.listInterfaces()
+networking.listInterfaces()
   .then(console.log)
   .catch(console.error);
 ```
