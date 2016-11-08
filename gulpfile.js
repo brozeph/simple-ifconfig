@@ -52,7 +52,7 @@ gulp.task('test-coverage', ['build'], function () {
 		.pipe(istanbul.hookRequire())
 		.on('finish', function () {
 			gulp
-				.src(['./test/lib/**/*.js'])
+				.src(['./test/**/*.js'])
 				.pipe(mocha({ reporter : 'spec' })
 						.on('error', function (err) {
 							if (err.showStack) {

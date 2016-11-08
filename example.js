@@ -1,4 +1,4 @@
-const ifconfig = require('../dist');
+const ifconfig = require('./dist');
 
 module.export = (function () {
 	'use strict';

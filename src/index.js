@@ -5,7 +5,6 @@ import 'source-map-support/register';
 
 import { spawn } from 'child_process';
 import logger from 'debug';
-import os from 'os';
 
 const
 	BASE_16 = 16,
@@ -55,7 +54,7 @@ const
 		preferred : /(^|[\ \t\,]*)preferred($|[\ \t\,]*)/i,
 		private : /(^|[\ \t\,]*)private($|[\ \t\,]*)/i,
 		pseg : /(^|[\ \t\,]*)pseg($|[\ \t\,]*)/i,
-	 	promisc : /(^|[\ \t\,]*)promisc($|[\ \t\,]*)/i,
+		promisc : /(^|[\ \t\,]*)promisc($|[\ \t\,]*)/i,
 		quorumloss : /(^|[\ \t\,]*)quorumloss($|[\ \t\,]*)/i,
 		router : /(^|[\ \t\,]*)router($|[\ \t\,]*)/i,
 		running : /(^|[\ \t\,]*)running($|[\ \t\,]*)/i,
@@ -64,7 +63,7 @@ const
 		standby : /(^|[\ \t\,]*)standby($|[\ \t\,]*)/i,
 		temporary : /(^|[\ \t\,]*)temporary($|[\ \t\,]*)/i,
 		unnumbered : /(^|[\ \t\,]*)unnumbered($|[\ \t\,]*)/i,
-	 	up : /(^|[\ \t\,]*)up($|[\ \t\,]*)/i,
+		up : /(^|[\ \t\,]*)up($|[\ \t\,]*)/i,
 		virtual : /(^|[\ \t\,]*)virtual($|[\ \t\,]*)/i,
 		varmtu : /(^|[\ \t\,]*)var\_mtu($|[\ \t\,]*)/i,
 		xresolv : /(^|[\ \t\,]*)xresolv($|[\ \t\,]*)/i
@@ -74,8 +73,6 @@ const
 	RE_IFCONFIG_IPV4 = /^\s*inet\s/,
 	RE_IFCONFIG_IPV6 = /^\s*inet6\s/,
 	RE_INDEX = /index[\ \:]+[0-9]+/i,
-	RE_IPV4 = /^ipv4$/i,
-	RE_IPV6 = /^ipv6$/i,
 	RE_LINUX_ADDR = /^addr\:/i,
 	RE_LINUX_BCAST = /^bcast\:/i,
 	RE_LINUX_MASK = /^mask\:/i,
@@ -360,7 +357,7 @@ function _parseInterfaceInfo (ifconfigResult) {
 	}
 
 	// populate the internal interfaces array
-	hardwareInterfaces.forEach((interfaces, hardwareAddress) => {
+	hardwareInterfaces.forEach((interfaces) => {
 		this._interfaces = this._interfaces
 			.concat(interfaces
 				// filter internal interfaces as applicable
@@ -378,7 +375,7 @@ export class NetworkInfo {
 		debug('new NetworkInfo(%o)', options);
 
 		this._interfaces = [];
-		this.options = options || {};
+		this._options = options || {};
 
 		this::_ensureDefaultOptions();
 	}
@@ -387,6 +384,10 @@ export class NetworkInfo {
 		await this::_ensureInterfaces();
 
 		return this._interfaces;
+	}
+
+	get options () {
+		return this._options;
 	}
 }
 
