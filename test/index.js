@@ -1,7 +1,8 @@
 /*eslint babel/object-shorthand:0*/
+/*eslint no-magic-numbers:0*/
 /*eslint no-unused-expressions:0*/
 
-var
+const
 	childProcess = require('child_process'),
 
 	chai = require('chai'),
@@ -15,7 +16,7 @@ var
 describe('unit tests for simple-ifconfig', function () {
 	'use strict';
 
-	var
+	let
 		ifconfigMock = mockSpawn(),
 		commandCalled = {},
 		mockErr = '',
@@ -25,6 +26,14 @@ describe('unit tests for simple-ifconfig', function () {
 		// override the child process to mock calls to spawn
 		childProcess.spawn = ifconfigMock;
 		ifconfigMock.setStrategy((command, args, opts) => {
+			// if error is the command, cause an exception
+			if (/error/.test(command)) {
+				return function () {
+					this.emit('error', new Error('test error'));
+				};
+			}
+
+			// let non ifconfig commands pass through
 			if (!/ifconfig/.test(command)) {
 				return null;
 			}
@@ -48,91 +57,17 @@ describe('unit tests for simple-ifconfig', function () {
 			}
 		});
 
-		beforeEach(function () {
-			// reset mock outputs
-			mockErr = '';
-			mockExitCode = 0;
-			mockOutput = '';
+	beforeEach(function () {
+		// reset mock outputs
+		mockErr = '';
+		mockExitCode = 0;
+		mockOutput = '';
+	});
 
-			/*
-			testMac = `lo0: flags=8049<UP,LOOPBACK,RUNNING,MULTICAST> mtu 16384
-	options=1203<RXCSUM,TXCSUM,TXSTATUS,SW_TIMESTAMP>
-	inet 127.0.0.1 netmask 0xff000000
-	inet6 ::1 prefixlen 128
-	inet6 fe80::1%lo0 prefixlen 64 scopeid 0x1
-	nd6 options=201<PERFORMNUD,DAD>
-gif0: flags=8010<POINTOPOINT,MULTICAST> mtu 1280
-stf0: flags=0<> mtu 1280
-en0: flags=8863<UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST> mtu 1500
-	ether 28:cf:e9:17:99:a9
-	inet6 fe80::1858:e1c7:bd6e:7f8b%en0 prefixlen 64 secured scopeid 0x5
-	inet 10.129.8.128 netmask 0xffffff00 broadcast 10.129.8.255
-	nd6 options=201<PERFORMNUD,DAD>
-	media: autoselect
-	status: active
-en1: flags=963<UP,BROADCAST,SMART,RUNNING,PROMISC,SIMPLEX> mtu 1500
-	options=60<TSO4,TSO6>
-	ether 32:00:12:54:34:a0
-	media: autoselect <full-duplex>
-	status: inactive
-en2: flags=963<UP,BROADCAST,SMART,RUNNING,PROMISC,SIMPLEX> mtu 1500
-	options=60<TSO4,TSO6>
-	ether 32:00:12:54:34:a1
-	media: autoselect <full-duplex>
-	status: inactive
-p2p0: flags=8843<UP,BROADCAST,RUNNING,SIMPLEX,MULTICAST> mtu 2304
-	ether 0a:cf:e9:17:99:a9
-	media: autoselect
-	status: inactive
-awdl0: flags=8943<UP,BROADCAST,RUNNING,PROMISC,SIMPLEX,MULTICAST> mtu 1484
-	ether ba:6a:33:46:e7:3b
-	inet6 fe80::b86a:33ff:fe46:e73b%awdl0 prefixlen 64 scopeid 0xa
-	nd6 options=201<PERFORMNUD,DAD>
-	media: autoselect
-	status: active
-bridge0: flags=8863<UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST> mtu 1500
-	options=63<RXCSUM,TXCSUM,TSO4,TSO6>
-	ether 32:00:12:54:34:a0
-	Configuration:
-		id 0:0:0:0:0:0 priority 0 hellotime 0 fwddelay 0
-		maxage 0 holdcnt 0 proto stp maxaddr 100 timeout 1200
-		root id 0:0:0:0:0:0 priority 0 ifcost 0 port 0
-		ipfilter disabled flags 0x2
-	member: en1 flags=3<LEARNING,DISCOVER>
-	        ifmaxaddr 0 port 6 priority 0 path cost 0
-	member: en2 flags=3<LEARNING,DISCOVER>
-	        ifmaxaddr 0 port 7 priority 0 path cost 0
-	nd6 options=201<PERFORMNUD,DAD>
-	media: <unknown type>
-	status: inactive
-utun0: flags=8051<UP,POINTOPOINT,RUNNING,MULTICAST> mtu 2000
-	inet6 fe80::1718:cddc:a53c:d8ce%utun0 prefixlen 64 scopeid 0xc
-	nd6 options=201<PERFORMNUD,DAD>
-utun1: flags=8051<UP,POINTOPOINT,RUNNING,MULTICAST> mtu 1380
-	inet6 fe80::1131:d105:b655:d508%utun1 prefixlen 64 scopeid 0xd
-	nd6 options=201<PERFORMNUD,DAD>
-fw0: flags=8863<UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST> mtu 4078
-	lladdr 00:0a:27:02:00:4b:13:fb
-	nd6 options=201<PERFORMNUD,DAD>
-	media: autoselect <full-duplex>
-	status: inactive
-en3: flags=8863<UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST> mtu 1500
-	options=10b<RXCSUM,TXCSUM,VLAN_HWTAGGING,AV>
-	ether a8:20:66:16:d4:9d
-	inet6 fe80::47c:7156:262f:72db%en3 prefixlen 64 secured scopeid 0x4
-	inet 10.129.4.66 netmask 0xfffffc00 broadcast 10.129.7.255
-	nd6 options=201<PERFORMNUD,DAD>
-	media: autoselect (100baseTX <full-duplex>)
-	status: active
-vboxnet0: flags=8943<UP,BROADCAST,RUNNING,PROMISC,SIMPLEX,MULTICAST> mtu 1500
-	ether 0a:00:27:00:00:00
-	inet 192.168.99.1 netmask 0xffffff00 broadcast 192.168.99.255`;
-//*/
-		});
-
-		describe('#', () => {
+	describe('#', () => {
 			it('should default options when not provided', () => {
-				var client = new lib.NetworkInfo();
+				let client = new lib.NetworkInfo();
+
 				should.exist(client);
 				should.exist(client.listInterfaces);
 				should.exist(client.options);
@@ -146,7 +81,7 @@ vboxnet0: flags=8943<UP,BROADCAST,RUNNING,PROMISC,SIMPLEX,MULTICAST> mtu 1500
 			});
 
 			it('should override options when specified', () => {
-				var client = new lib.NetworkInfo({
+				let client = new lib.NetworkInfo({
 					ifconfigPath : '/usr/local/bin/ifconfig',
 					active : false,
 					internal : true
@@ -163,12 +98,64 @@ vboxnet0: flags=8943<UP,BROADCAST,RUNNING,PROMISC,SIMPLEX,MULTICAST> mtu 1500
 				should.exist(client.options.internal);
 				client.options.internal.should.be.true;
 			});
+
+			it('should call the supplied ifconfig command', (done) => {
+				let client = new lib.NetworkInfo({
+					ifconfigPath : '/usr/local/bin/ifconfig'
+				});
+
+				should.exist(client);
+
+				client
+					.listInterfaces()
+					.then(() => {
+						should.exist(commandCalled);
+						commandCalled.command.should.equal('/usr/local/bin/ifconfig');
+
+						return done();
+					})
+					.catch(done);
+			});
 		});
 
-		describe('#listInterfaces', () => {
-			describe('bsd', () => {
-				beforeEach(() => {
-					mockOutput = `
+	describe('#listInterfaces', () => {
+		it('should properly handle command error response', (done) => {
+			let client = new lib.NetworkInfo();
+
+			mockErr = 'test error';
+			mockExitCode = 100;
+
+			client
+				.listInterfaces()
+				.then(() => done(new Error('command error response')))
+				.catch((err) => {
+					should.exist(err);
+					err.message.should.equal('test error');
+
+					return done();
+				});
+		});
+
+		it('should properly handle command execution error', (done) => {
+			let client = new lib.NetworkInfo({
+				ifconfigPath : 'error'
+			});
+
+			client
+				.listInterfaces()
+				.then(() => done(new Error('command execution error')))
+				.catch((err) => {
+					should.exist(err);
+					err.message.should.equal('test error');
+
+					return done();
+				});
+		});
+	});
+
+	describe('#listInterfaces (bsd)', () => {
+		beforeEach(() => {
+			mockOutput = `
 em0: flags=8843<UP,BROADCAST,RUNNING,SIMPLEX,MULTICAST> metric 0 mtu 1500
 	options=9b<RXCSUM,TXCSUM,VLAN_MTU,VLAN_HWTAGGING,VLAN_HWCSUM>
 	ether 08:00:27:35:48:46
@@ -185,12 +172,97 @@ lo0: flags=8049<UP,LOOPBACK,RUNNING,MULTICAST> metric 0 mtu 16384
 	nd6 options=21<PERFORMNUD,AUTO_LINKLOCAL>
 	groups: lo
 `;
-				});
+		});
+
+		it('should properly parse linux ifconfig output (defaults)', (done) => {
+			let client = new lib.NetworkInfo();
+
+			client
+				.listInterfaces()
+				.then((interfaces) => {
+					should.exist(interfaces);
+					interfaces.should.be.an.Array;
+					interfaces.should.have.length(1);
+
+					interfaces[0].hardwareAddress.should.equal('08:00:27:35:48:46');
+					interfaces[0].active.should.equal(true);
+					interfaces[0].name.should.equal('em0');
+					interfaces[0].ipv4.should.be.an('array');
+					interfaces[0].ipv4.should.have.length(1);
+					interfaces[0].ipv4[0].address.should.equal('10.0.2.4');
+					interfaces[0].ipv4[0].broadcast.should.equal('10.0.2.255');
+					interfaces[0].ipv4[0].netmask.should.equal('255.255.255.0');
+					interfaces[0].ipv6.should.be.an('array');
+					interfaces[0].ipv6.should.have.length(1);
+					interfaces[0].ipv6[0].address.should.equal('fe80::a00:27ff:fe35:4846');
+					interfaces[0].ipv6[0].prefixLength.should.equal(64);
+					should.exist(interfaces[0].flags);
+					interfaces[0].flags.broadcast.should.be.true;
+					interfaces[0].flags.multicast.should.be.true;
+					interfaces[0].flags.running.should.be.true;
+					interfaces[0].flags.up.should.be.true;
+					interfaces[0].metric.should.equal(0);
+					interfaces[0].mtu.should.equal(1500);
+
+					return done();
+				})
+				.catch(done);
+		});
+
+		it('should properly include internal and inactive adapters', (done) => {
+			let client = new lib.NetworkInfo({
+				active : false,
+				internal : true
 			});
 
-			describe('linux', () => {
-				beforeEach(() => {
-					mockOutput = `
+			client
+				.listInterfaces()
+				.then((interfaces) => {
+					should.exist(interfaces);
+					interfaces.should.be.an.Array;
+					interfaces.should.have.length(2);
+
+					return done();
+				})
+				.catch(done);
+		});
+
+		it('should properly parse non-hexidecimal formatted netmask values', (done) => {
+			let client = new lib.NetworkInfo();
+
+			mockOutput = `
+em0: flags=8843<UP,BROADCAST,RUNNING,SIMPLEX,MULTICAST> metric 0 mtu 1500
+	options=9b<RXCSUM,TXCSUM,VLAN_MTU,VLAN_HWTAGGING,VLAN_HWCSUM>
+	ether 08:00:27:35:48:46
+	inet6 fe80::a00:27ff:fe35:4846%em0 prefixlen 64 scopeid 0x1
+	inet 10.0.2.4 netmask 255.255.255.0 broadcast 10.0.2.255
+	nd6 options=23<PERFORMNUD,ACCEPT_RTADV,AUTO_LINKLOCAL>
+	media: Ethernet autoselect (1000baseT <full-duplex>)
+	status: active
+lo0: flags=8049<UP,LOOPBACK,RUNNING,MULTICAST> metric 0 mtu 16384
+	options=600003<RXCSUM,TXCSUM,RXCSUM_IPV6,TXCSUM_IPV6>
+	inet6 ::1 prefixlen 128
+	inet6 fe80::1%lo0 prefixlen 64 scopeid 0x2
+	inet 127.0.0.1 netmask 0xff000000
+	nd6 options=21<PERFORMNUD,AUTO_LINKLOCAL>
+	groups: lo
+`;
+
+			client
+				.listInterfaces()
+				.then((interfaces) => {
+						should.exist(interfaces);
+						interfaces[0].ipv4[0].netmask.should.equal('255.255.255.0');
+
+						return done();
+				})
+				.catch(done);
+		});
+	});
+
+	describe('#listInterfaces (linux)', () => {
+		beforeEach(() => {
+			mockOutput = `
 enp0s3    Link encap:Ethernet  HWaddr 08:00:27:a9:57:5a
         inet addr:10.0.2.15  Bcast:10.0.2.255  Mask:255.255.255.0
         inet6 addr: fe80::a00:27ff:fea9:575a/64 Scope:Link
@@ -209,24 +281,262 @@ lo        Link encap:Local Loopback
         collisions:0 txqueuelen:1
         RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
 `;
-				});
-
-				it('should properly parse linux ifconfig output (defaults)', (done) => {
-					var client = new lib.NetworkInfo();
-
-					client
-						.listInterfaces()
-						.then((interfaces) => {
-							should.exist(interfaces);
-							interfaces.should.be.an.Array;
-							interfaces.should.have.length(1);
-
-							console.log(commandCalled);
-
-							return done();
-						})
-						.catch(done);
-				});
-			});
 		});
+
+		it('should properly parse linux ifconfig output (defaults)', (done) => {
+			let client = new lib.NetworkInfo();
+
+			client
+				.listInterfaces()
+				.then((interfaces) => {
+					should.exist(interfaces);
+					interfaces.should.be.an.Array;
+					interfaces.should.have.length(1);
+
+					interfaces[0].hardwareAddress.should.equal('08:00:27:a9:57:5a');
+					interfaces[0].active.should.equal(true);
+					interfaces[0].name.should.equal('enp0s3');
+					interfaces[0].ipv4.should.be.an('array');
+					interfaces[0].ipv4.should.have.length(1);
+					interfaces[0].ipv4[0].address.should.equal('10.0.2.15');
+					interfaces[0].ipv4[0].broadcast.should.equal('10.0.2.255');
+					interfaces[0].ipv4[0].netmask.should.equal('255.255.255.0');
+					interfaces[0].ipv6.should.be.an('array');
+					interfaces[0].ipv6.should.have.length(1);
+					interfaces[0].ipv6[0].address.should.equal('fe80::a00:27ff:fea9:575a');
+					interfaces[0].ipv6[0].prefixLength.should.equal(64);
+					should.exist(interfaces[0].flags);
+					interfaces[0].flags.broadcast.should.be.true;
+					interfaces[0].flags.multicast.should.be.true;
+					interfaces[0].flags.running.should.be.true;
+					interfaces[0].flags.up.should.be.true;
+					interfaces[0].metric.should.equal(1);
+					interfaces[0].mtu.should.equal(1500);
+
+					return done();
+				})
+				.catch(done);
+		});
+
+		it('should properly include internal and inactive adapters', (done) => {
+			let client = new lib.NetworkInfo({
+				active : false,
+				internal : true
+			});
+
+			client
+				.listInterfaces()
+				.then((interfaces) => {
+					should.exist(interfaces);
+					interfaces.should.be.an.Array;
+					interfaces.should.have.length(2);
+
+					return done();
+				})
+				.catch(done);
+		});
+	});
+
+	describe('#listInterfaces (darwin)', () => {
+		beforeEach(() => {
+			mockOutput = `
+lo0: flags=8049<UP,LOOPBACK,RUNNING,MULTICAST> mtu 16384 index 1
+	eflags=11000000<ECN_ENABLE,SENDLIST>
+	options=1203<RXCSUM,TXCSUM,TXSTATUS,SW_TIMESTAMP>
+	inet 127.0.0.1 netmask 0xff000000
+	inet6 ::1 prefixlen 128
+	inet6 fe80::1%lo0 prefixlen 64 scopeid 0x1
+	nd6 options=201<PERFORMNUD,DAD>
+	link quality: 100 (good)
+	state availability: 0 (true)
+	timestamp: disabled
+	qosmarking enabled: no mode: none
+gif0: flags=8010<POINTOPOINT,MULTICAST> mtu 1280 index 2
+	eflags=1000000<ECN_ENABLE>
+	state availability: 0 (true)
+	qosmarking enabled: no mode: none
+stf0: flags=0<> mtu 1280 index 3
+	eflags=1000000<ECN_ENABLE>
+	state availability: 0 (true)
+	qosmarking enabled: no mode: none
+en0: flags=8863<UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST> mtu 1500 index 4
+	eflags=12000c0<ACCEPT_RTADV,TXSTART,NOACKPRI,ECN_ENABLE>
+	ether 28:cf:e9:17:99:a9
+	inet6 fe80::8f0:d3fc:39a2:bb9d%en0 prefixlen 64 secured scopeid 0x4
+	inet 10.129.14.60 netmask 0xffffff00 broadcast 10.129.14.255
+	nd6 options=201<PERFORMNUD,DAD>
+	media: autoselect
+	status: active
+	type: Wi-Fi
+	link quality: 100 (good)
+	state availability: 0 (true)
+	scheduler: TCQ (driver managed)
+	uplink rate: 20.09 Mbps [eff] / 21.60 Mbps
+	downlink rate: 20.09 Mbps [eff] / 21.60 Mbps [max]
+	qosmarking enabled: no mode: none
+en1: flags=963<UP,BROADCAST,SMART,RUNNING,PROMISC,SIMPLEX> mtu 1500 index 6
+	eflags=1000080<TXSTART,ECN_ENABLE>
+	options=60<TSO4,TSO6>
+	ether 32:00:12:54:34:a0
+	media: autoselect <full-duplex>
+	status: inactive
+	type: Ethernet
+	state availability: 0 (true)
+	scheduler: QFQ
+	qosmarking enabled: no mode: none
+en2: flags=963<UP,BROADCAST,SMART,RUNNING,PROMISC,SIMPLEX> mtu 1500 index 7
+	eflags=1000080<TXSTART,ECN_ENABLE>
+	options=60<TSO4,TSO6>
+	ether 32:00:12:54:34:a1
+	media: autoselect <full-duplex>
+	status: inactive
+	type: Ethernet
+	state availability: 0 (true)
+	scheduler: QFQ
+	qosmarking enabled: no mode: none
+p2p0: flags=8843<UP,BROADCAST,RUNNING,SIMPLEX,MULTICAST> mtu 2304 index 10
+	eflags=1000080<TXSTART,ECN_ENABLE>
+	ether 0a:cf:e9:17:99:a9
+	media: autoselect
+	status: inactive
+	type: Wi-Fi
+	state availability: 0 (true)
+	scheduler: TCQ (driver managed)
+	link rate: 10.00 Mbps
+	qosmarking enabled: no mode: none
+awdl0: flags=8943<UP,BROADCAST,RUNNING,PROMISC,SIMPLEX,MULTICAST> mtu 1484 index 11
+	eflags=13e0080<TXSTART,LOCALNET_PRIVATE,ND6ALT,RESTRICTED_RECV,AWDL,NOACKPRI,ECN_ENABLE>
+	ether 4e:98:56:5b:36:97
+	inet6 fe80::4c98:56ff:fe5b:3697%awdl0 prefixlen 64 scopeid 0xb
+	nd6 options=201<PERFORMNUD,DAD>
+	media: autoselect
+	status: active
+	type: Wi-Fi
+	state availability: 0 (true)
+	scheduler: TCQ (driver managed)
+	link rate: 10.00 Mbps
+	qosmarking enabled: no mode: none
+bridge0: flags=8863<UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST> mtu 1500 index 12
+	eflags=1000000<ECN_ENABLE>
+	options=63<RXCSUM,TXCSUM,TSO4,TSO6>
+	ether 32:00:12:54:34:a0
+	Configuration:
+		id 0:0:0:0:0:0 priority 0 hellotime 0 fwddelay 0
+		maxage 0 holdcnt 0 proto stp maxaddr 100 timeout 1200
+		root id 0:0:0:0:0:0 priority 0 ifcost 0 port 0
+		ipfilter disabled flags 0x2
+	member: en1 flags=3<LEARNING,DISCOVER>
+	        ifmaxaddr 0 port 6 priority 0 path cost 0
+	        hostfilter 0 hw: 0:0:0:0:0:0 ip: 0.0.0.0
+	member: en2 flags=3<LEARNING,DISCOVER>
+	        ifmaxaddr 0 port 7 priority 0 path cost 0
+	        hostfilter 0 hw: 0:0:0:0:0:0 ip: 0.0.0.0
+	nd6 options=201<PERFORMNUD,DAD>
+	media: <unknown type>
+	status: inactive
+	state availability: 0 (true)
+	qosmarking enabled: no mode: none
+utun0: flags=8051<UP,POINTOPOINT,RUNNING,MULTICAST> mtu 2000 index 13
+	eflags=1002080<TXSTART,NOAUTOIPV6LL,ECN_ENABLE>
+	inet6 fe80::b32:282a:9d29:e146%utun0 prefixlen 64 scopeid 0xd
+	nd6 options=201<PERFORMNUD,DAD>
+	agent domain:ids501 type:clientchannel flags:0x83 desc:"IDSNexusAgent ids501 : clientchannel"
+	state availability: 0 (true)
+	scheduler: QFQ
+	qosmarking enabled: no mode: none
+vboxnet0: flags=8842<BROADCAST,RUNNING,SIMPLEX,MULTICAST> mtu 1500 index 15
+	eflags=1000000<ECN_ENABLE>
+	ether 0a:00:27:00:00:00
+	type: Ethernet
+	state availability: 0 (true)
+	qosmarking enabled: no mode: none
+utun1: flags=8051<UP,POINTOPOINT,RUNNING,MULTICAST> mtu 1380 index 14
+	eflags=1002080<TXSTART,NOAUTOIPV6LL,ECN_ENABLE>
+	inet6 fe80::1c8b:d5e5:5bce:76c4%utun1 prefixlen 64 scopeid 0xe
+	nd6 options=201<PERFORMNUD,DAD>
+	state availability: 1 (false)
+	scheduler: QFQ
+	qosmarking enabled: no mode: none
+fw0: flags=8863<UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST> mtu 4078 index 5
+	eflags=1000000<ECN_ENABLE>
+	lladdr 00:0a:27:02:00:4b:13:fb
+	nd6 options=201<PERFORMNUD,DAD>
+	media: autoselect <full-duplex>
+	status: inactive
+	type: IP over FireWire
+	state availability: 0 (true)
+	link rate: 10.00 Mbps
+	qosmarking enabled: no mode: none
+en3: flags=8863<UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST> mtu 1500 index 8
+	eflags=10001c0<ACCEPT_RTADV,TXSTART,RXPOLL,ECN_ENABLE>
+	options=10b<RXCSUM,TXCSUM,VLAN_HWTAGGING,AV>
+	ether a8:20:66:16:d4:9d
+	inet6 fe80::48e:ceba:32c2:923c%en3 prefixlen 64 secured scopeid 0x8
+	inet 10.129.41.23 netmask 0xffffff00 broadcast 10.129.41.255
+	nd6 options=201<PERFORMNUD,DAD>
+	media: autoselect (1000baseT <full-duplex>)
+	status: active
+	type: Ethernet
+	link quality: 100 (good)
+	state availability: 0 (true)
+	scheduler: QFQ
+	link rate: 1.00 Gbps
+	qosmarking enabled: no mode: none
+`;
+		});
+
+		it('should properly parse linux ifconfig output (defaults)', (done) => {
+			let client = new lib.NetworkInfo();
+
+			client
+				.listInterfaces()
+				.then((interfaces) => {
+					should.exist(interfaces);
+					interfaces.should.be.an.Array;
+					interfaces.should.have.length(3);
+
+					interfaces[0].hardwareAddress.should.equal('28:cf:e9:17:99:a9');
+					interfaces[0].active.should.equal(true);
+					interfaces[0].index.should.equal(4);
+					interfaces[0].name.should.equal('en0');
+					interfaces[0].ipv4.should.be.an('array');
+					interfaces[0].ipv4.should.have.length(1);
+					interfaces[0].ipv4[0].address.should.equal('10.129.14.60');
+					interfaces[0].ipv4[0].broadcast.should.equal('10.129.14.255');
+					interfaces[0].ipv4[0].netmask.should.equal('255.255.255.0');
+					interfaces[0].ipv6.should.be.an('array');
+					interfaces[0].ipv6.should.have.length(1);
+					interfaces[0].ipv6[0].address.should.equal('fe80::8f0:d3fc:39a2:bb9d');
+					interfaces[0].ipv6[0].prefixLength.should.equal(64);
+					should.exist(interfaces[0].flags);
+					interfaces[0].flags.broadcast.should.be.true;
+					interfaces[0].flags.multicast.should.be.true;
+					interfaces[0].flags.running.should.be.true;
+					interfaces[0].flags.smart.should.be.true;
+					interfaces[0].flags.up.should.be.true;
+					interfaces[0].mtu.should.equal(1500);
+
+					return done();
+				})
+				.catch(done);
+		});
+
+		it('should properly include internal and inactive adapters', (done) => {
+			let client = new lib.NetworkInfo({
+				active : false,
+				internal : true
+			});
+
+			client
+				.listInterfaces()
+				.then((interfaces) => {
+					should.exist(interfaces);
+					interfaces.should.be.an.Array;
+					interfaces.should.have.length(14);
+
+					return done();
+				})
+				.catch(done);
+		});
+	});
 });

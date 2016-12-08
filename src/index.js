@@ -105,22 +105,6 @@ function _ensureDefaultOptions () {
 		});
 }
 
-function _ensureInterfaces () {
-	if (this._interfaces.length) {
-		return Promise.resolve(this._interfaces);
-	}
-
-	return new Promise((resolve, reject) => {
-		return this::_ifconfig(VERBOSE)
-			.then((result) => {
-				this::_parseInterfaceInfo(result);
-
-				return resolve(this._interfaces);
-			})
-			.catch(reject);
-	});
-}
-
 function _ifconfig (...args) {
 	return new Promise((resolve, reject) => {
 		let
@@ -139,7 +123,7 @@ function _ifconfig (...args) {
 			if (code) {
 				let err = new Error(stderr.join(''));
 				err.code = code;
-				err.command = `${this.options.ifconfigPath} ${args.join(' ')}`;
+				err.command = [this.options.ifconfigPath].concat(args).join(' ');
 
 				return reject(err);
 			}
@@ -149,7 +133,7 @@ function _ifconfig (...args) {
 
 		// handle errors while attempting to execute command
 		ifconfig.on('error', (err) => {
-			err.command = `${this.options.ifconfigPath} ${args.join(' ')}`;
+			err.command = [this.options.ifconfigPath].concat(args).join(' ');
 			debug('%s command failed (error: %s)', err.command, err.message);
 
 			return reject(err);
@@ -169,10 +153,8 @@ function _parseInterfaceInfo (ifconfigResult) {
 	let
 		addr,
 		hardwareInterfaces = new Map(),
-		iface;
-
-	// ensure an entry for the default hardware address
-	hardwareInterfaces.set(DEFAULT_HARDWARE_ADDR, []);
+		iface,
+		result = [];
 
 	// break the ifconfig command result into lines and parse them 1 by 1...
 	ifconfigResult.split(/\r?\n/).forEach((line) => {
@@ -182,12 +164,6 @@ function _parseInterfaceInfo (ifconfigResult) {
 		if (!/\s/.test(line.charAt(0))) {
 			// split the line on spaces (and optionally a colon)
 			line = line.split(/\:?\ +/);
-
-			// prior to creating a new iface, check to see if the previously parsed
-			// one should be added to the map
-			if (iface && iface.hardwareAddress === DEFAULT_HARDWARE_ADDR) {
-				hardwareInterfaces.get(iface.hardwareAddress).push(iface);
-			}
 
 			// create new iface...
 			iface = {
@@ -199,10 +175,13 @@ function _parseInterfaceInfo (ifconfigResult) {
 			// assign the name using the first term in the line
 			iface.name = line[0];
 
-			// ensure we properly parsed a name for the interface
+			// ensure we have a valid interface
 			if (!iface.name) {
 				return;
 			}
+
+			// track the interface to return after processing
+			hardwareInterfaces.set(iface.name, iface);
 
 			// rebuild the line minus the adapter name and continue processing
 			line = line.slice(1).join(' ');
@@ -217,16 +196,6 @@ function _parseInterfaceInfo (ifconfigResult) {
 				iface.name);
 			iface.hardwareAddress = terms[2];
 			iface.internal = false;
-
-			if (hardwareInterfaces.has(iface.hardwareAddress)) {
-				debug(
-					'multiple interfaces found using hardware address %s',
-					iface.hardwareAddress);
-
-				hardwareInterfaces.get(iface.hardwareAddress).push(iface);
-			} else {
-				hardwareInterfaces.set(iface.hardwareAddress, [iface]);
-			}
 		}
 
 		// look for flag information and process
@@ -340,7 +309,7 @@ function _parseInterfaceInfo (ifconfigResult) {
 				if (RE_LINUX_ADDR.test(term)) {
 					terms = terms[i + 1].split(/\//);
 					addr.address = terms[0];
-					addr.prefixLength = terms[1];
+					addr.prefixLength = parseInt(terms[1], 10);
 
 					return true;
 				}
@@ -370,41 +339,39 @@ function _parseInterfaceInfo (ifconfigResult) {
 		}
 	});
 
-	// pick up any trailing interfaces where the hardware address was not defined
-	if (iface && iface.hardwareAddress === DEFAULT_HARDWARE_ADDR) {
-		hardwareInterfaces.get(iface.hardwareAddress).push(iface);
-	}
-
 	// populate the internal interfaces array
-	hardwareInterfaces.forEach((interfaces) => {
-		this._interfaces = this._interfaces
-			.concat(interfaces
-				// filter out internal interfaces as applicable
-				.filter((iface) => this.options.internal || !iface.internal)
-				// filter out non-active interfaces as applicable
-				.filter((iface) => !this.options.active || iface.active));
+	hardwareInterfaces.forEach((iface) => {
+		let include =
+			// filter out internal interfaces as applicable
+			(this.options.internal || !iface.internal) &&
+			// filter out non-active interfaces as applicable
+			(!this.options.active || iface.active);
+
+		if (include) {
+			result.push(iface);
+		}
 	});
 
-	this._interfaces.sort((a, b) => (
+	// sort by metric / priority
+	result.sort((a, b) => (
 		(a.metric || a.index || DEFAULT_METRIC) - (b.metric || b.index || DEFAULT_METRIC)));
 
-	return this._interfaces;
+	return result;
 }
 
 export class NetworkInfo {
 	constructor (options) {
 		debug('new NetworkInfo(%o)', options);
 
-		this._interfaces = [];
 		this._options = options || {};
 
 		this::_ensureDefaultOptions();
 	}
 
 	async listInterfaces () {
-		await this::_ensureInterfaces();
+		let result = await this::_ifconfig(VERBOSE);
 
-		return this._interfaces;
+		return this::_parseInterfaceInfo(result);
 	}
 
 	get options () {
