@@ -207,9 +207,7 @@ lo        Link encap:Local Loopback
 				});
 
 				it('should properly parse linux ifconfig output (defaults)', (done) => {
-					var
-						client = new lib.NetworkInfo(),
-						interfaces;
+					var client = new lib.NetworkInfo();
 
 					client
 						.listInterfaces()
@@ -217,6 +215,8 @@ lo        Link encap:Local Loopback
 							should.exist(interfaces);
 							interfaces.should.be.an.Array;
 							interfaces.should.have.length(1);
+
+							console.log(commandCalled);
 
 							return done();
 						})
