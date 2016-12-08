@@ -13,6 +13,7 @@ const
 	DEFAULT_HARDWARE_ADDRESS = '00:00:00:00:00:00',
 	DEFAULT_OPTIONS = {
 		ifconfigPath : '/sbin/ifconfig',
+		includeInactive : false,
 		includeInternal : false
 	},
 	DEFAULT_METRIC = 99,
@@ -68,7 +69,7 @@ const
 		varmtu : /(^|[\ \t\,]*)var\_mtu($|[\ \t\,]*)/i,
 		xresolv : /(^|[\ \t\,]*)xresolv($|[\ \t\,]*)/i
 	},
-	RE_HARDWAREADDRESS = /(ether|hwaddr)\ +(([0-9a-f]{2}[\:\-]{0,1}){6})/i,
+	RE_HARDWARE_ADDRESS = /(ether|hwaddr)\ +(([0-9a-f]{2}[\:\-]{0,1}){6})/i,
 	RE_IFCONFIG_FLAGS = /<?([a-z\,\ \t\_]*)\>?(([\ \t]*mtu[\:\ \t]+[0-9]+)|([\ \t]*metric[\:\ \t]+[0-9]+)|([\ \t]*index[\:\ \t]+[0-9]+))+/i,
 	RE_IFCONFIG_IPV4 = /^\s*inet\s/,
 	RE_IFCONFIG_IPV6 = /^\s*inet6\s/,
@@ -83,6 +84,8 @@ const
 	RE_UNIX_IPV6_ADDR = /^inet6$/i,
 	RE_UNIX_IPV6_PREFIX_LENGTH = /^prefixlen$/i,
 	RE_UNIX_MASK = /^netmask$/i,
+	RE_UNIX_STATUS = /^\s*status/i,
+	RE_UNIX_STATUS_ACTIVE = /\ active$/i,
 	VERBOSE = '-v';
 
 function _ensureDefaultOptions () {
@@ -201,8 +204,8 @@ function _parseInterfaceInfo (ifconfigResult) {
 			line = line.slice(1).join(' ');
 		}
 
-		if (RE_HARDWAREADDRESS.test(line)) {
-			terms = line.match(RE_HARDWAREADDRESS);
+		if (RE_HARDWARE_ADDRESS.test(line)) {
+			terms = line.match(RE_HARDWARE_ADDRESS);
 			debug(
 				'hardware address of %s found for interface %s',
 				terms[2],
@@ -349,6 +352,13 @@ function _parseInterfaceInfo (ifconfigResult) {
 				return false;
 			});
 		}
+
+		// look for status
+		if (RE_UNIX_STATUS.test(line)) {
+			terms = line.split(/\:/g);
+			debug('interface %s is %s', iface.name, terms[1]);
+			iface.active = RE_UNIX_STATUS_ACTIVE.test(terms[1]);
+		}
 	});
 
 	// pick up any trailing interfaces where the hardware address was not defined
@@ -361,7 +371,9 @@ function _parseInterfaceInfo (ifconfigResult) {
 		this._interfaces = this._interfaces
 			.concat(interfaces
 				// filter internal interfaces as applicable
-				.filter((iface) => this.options.includeInternal || !iface.internal));
+				.filter((iface) => this.options.includeInternal || !iface.internal)
+				// filter inactive interfaces as applicable
+				.filter((iface) => this.options.includeInactive || iface.active));
 	});
 
 	this._interfaces.sort((a, b) => (
