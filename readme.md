@@ -26,6 +26,7 @@ Creates a new instance of the `NetworkInfo` class that allows for interaction wi
 #### Options (optional)
 
 * `ifconfigPath` (_optional_, `String`) - defaults to `/sbin/ifconfig` when not provided; defines the path to the `ifconfig` executable
+* `includeInactive` (_optional_, `Boolean`) - defaults to `false` when not provided; when `true`, inactive (not connected or transmitting) interfaces are included
 * `includeInternal` (_optional_, `Boolean`) - defaults to `false` when not provided; when `true`, loopback adapters are included when interacting with various other module methods
 
 ```javascript
@@ -33,10 +34,12 @@ import { NetworkInfo } from 'simple-ifconfig';
 
 const
   ifconfigPath = '/sbin/ifconfg',
+  includeInactive = false,
   includeInternal = false;
 
 let networking = new NetworkInfo({
   ifconfigPath,
+  includeInactive,
   includeInternal
 });
 
@@ -62,24 +65,7 @@ networking.listInterfaces()
 Example output:
 
 ```javascript
-[ { hardwareAddress: 'a8:20:66:16:d4:9d',
-    internal: false,
-    name: 'en3',
-    flags:
-     { broadcast: true,
-       multicast: true,
-       running: true,
-       simplex: true,
-       smart: true,
-       up: true },
-    index: 4,
-    mtu: 1500,
-    ipv6: { address: 'fe80::c77:6296:f92e:9994', prefixLength: 64 },
-    ipv4:
-     { address: '10.129.4.111',
-       netmask: '255.255.252.0',
-       broadcast: '10.129.7.255' } },
-  { hardwareAddress: '28:cf:e9:17:99:a9',
+[ { hardwareAddress: '28:cf:e9:17:99:a9',
     internal: false,
     name: 'en0',
     flags:
@@ -89,49 +75,33 @@ Example output:
        simplex: true,
        smart: true,
        up: true },
-    index: 6,
+    index: 4,
     mtu: 1500,
-    ipv6: { address: 'fe80::1074:afa6:c183:b4b8', prefixLength: 64 },
+    ipv6: { address: 'fe80::8f0:d3fc:39a2:bb9d', prefixLength: 64 },
     ipv4:
-     { address: '10.129.8.128',
+     { address: '10.129.14.60',
        netmask: '255.255.255.0',
-       broadcast: '10.129.8.255' } },
-  { hardwareAddress: '32:00:12:54:34:a0',
+       broadcast: '10.129.14.255' },
+    active: true },
+  { hardwareAddress: 'a8:20:66:16:d4:9d',
     internal: false,
-    name: 'en1',
-    flags:
-     { broadcast: true,
-       promisc: true,
-       running: true,
-       simplex: true,
-       smart: true,
-       up: true },
-    index: 7,
-    mtu: 1500 },
-  { hardwareAddress: '32:00:12:54:34:a1',
-    internal: false,
-    name: 'en2',
-    flags:
-     { broadcast: true,
-       promisc: true,
-       running: true,
-       simplex: true,
-       smart: true,
-       up: true },
-    index: 8,
-    mtu: 1500 },
-  { hardwareAddress: '0a:cf:e9:17:99:a9',
-    internal: false,
-    name: 'p2p0',
+    name: 'en3',
     flags:
      { broadcast: true,
        multicast: true,
        running: true,
        simplex: true,
+       smart: true,
        up: true },
-    index: 9,
-    mtu: 2304 },
-  { hardwareAddress: '66:f3:72:2f:7b:95',
+    index: 8,
+    mtu: 1500,
+    ipv6: { address: 'fe80::48e:ceba:32c2:923c', prefixLength: 64 },
+    ipv4:
+     { address: '10.129.41.23',
+       netmask: '255.255.255.0',
+       broadcast: '10.129.41.255' },
+    active: true },
+  { hardwareAddress: '4e:98:56:5b:36:97',
     internal: false,
     name: 'awdl0',
     flags:
@@ -141,42 +111,17 @@ Example output:
        running: true,
        simplex: true,
        up: true },
-    index: 10,
-    mtu: 1484,
-    ipv6: { address: 'fe80::64f3:72ff:fe2f:7b95', prefixLength: 64 } },
-  { hardwareAddress: '32:00:12:54:34:a0',
-    internal: false,
-    name: 'bridge0',
-    flags:
-     { broadcast: true,
-       multicast: true,
-       running: true,
-       simplex: true,
-       smart: true,
-       up: true },
     index: 11,
-    mtu: 1500 },
-  { hardwareAddress: '0a:00:27:00:00:00',
-    internal: false,
-    name: 'vboxnet0',
-    flags:
-     { broadcast: true,
-       multicast: true,
-       running: true,
-       simplex: true,
-       up: true },
-    index: 15,
-    mtu: 1500,
-    ipv4:
-     { address: '192.168.99.1',
-       netmask: '255.255.255.0',
-       broadcast: '192.168.99.255' } } ]
+    mtu: 1484,
+    ipv6: { address: 'fe80::4c98:56ff:fe5b:3697', prefixLength: 64 },
+    active: true } ]
 ```
 
 #### interface
 
 Each interface returned is an object with the following properties:
 
+* `active` (_required_, `Boolean`)
 * `flags` (_optional_, `String`)
   * `addrconf` (_optional_, `Boolean`)
   * `allmulti` (_optional_, `Boolean`)
