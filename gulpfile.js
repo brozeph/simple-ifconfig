@@ -67,20 +67,9 @@ gulp.task('test-coverage', ['build'], function () {
 });
 
 
-gulp.task('test-integration', ['build'], function () {
-	return gulp
-		.src(['./test/integration/**/*.js'], { read : false })
-		.pipe(mocha({
-			checkLeaks : false,
-			reporter : 'spec',
-			ui : 'bdd'
-		}));
-});
-
-
 gulp.task('test-unit', ['build'], function () {
 	return gulp
-		.src(['./test/lib/**/*.js'], { read : false })
+		.src(['./test/**/*.js'], { read : false })
 		.pipe(mocha({
 			checkLeaks : true,
 			reporter : 'spec',

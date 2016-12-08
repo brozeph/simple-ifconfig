@@ -26,21 +26,21 @@ Creates a new instance of the `NetworkInfo` class that allows for interaction wi
 #### Options (optional)
 
 * `ifconfigPath` (_optional_, `String`) - defaults to `/sbin/ifconfig` when not provided; defines the path to the `ifconfig` executable
-* `includeInactive` (_optional_, `Boolean`) - defaults to `false` when not provided; when `true`, inactive (not connected or transmitting) interfaces are included
-* `includeInternal` (_optional_, `Boolean`) - defaults to `false` when not provided; when `true`, loopback adapters are included when interacting with various other module methods
+* `active` (_optional_, `Boolean`) - defaults to `true` when not provided; when `true`, only the interfaces that are connected and actively transmitting data are included
+* `internal` (_optional_, `Boolean`) - defaults to `false` when not provided; when `true`, internal (i.e. loopback, etc.) adapters are included when interacting with various other module methods
 
 ```javascript
 import { NetworkInfo } from 'simple-ifconfig';
 
 const
   ifconfigPath = '/sbin/ifconfg',
-  includeInactive = false,
-  includeInternal = false;
+  active = false,
+  internal = false;
 
 let networking = new NetworkInfo({
   ifconfigPath,
-  includeInactive,
-  includeInternal
+  active,
+  internal
 });
 
 // work with networking instance...
@@ -77,11 +77,11 @@ Example output:
        up: true },
     index: 4,
     mtu: 1500,
-    ipv6: { address: 'fe80::8f0:d3fc:39a2:bb9d', prefixLength: 64 },
+    ipv6: [ { address: 'fe80::8f0:d3fc:39a2:bb9d', prefixLength: 64 } ],
     ipv4:
-     { address: '10.129.14.60',
-       netmask: '255.255.255.0',
-       broadcast: '10.129.14.255' },
+     [ { address: '10.129.14.60',
+         netmask: '255.255.255.0',
+         broadcast: '10.129.14.255' } ],
     active: true },
   { hardwareAddress: 'a8:20:66:16:d4:9d',
     internal: false,
@@ -95,11 +95,11 @@ Example output:
        up: true },
     index: 8,
     mtu: 1500,
-    ipv6: { address: 'fe80::48e:ceba:32c2:923c', prefixLength: 64 },
+    ipv6: [ { address: 'fe80::48e:ceba:32c2:923c', prefixLength: 64 } ],
     ipv4:
-     { address: '10.129.41.23',
-       netmask: '255.255.255.0',
-       broadcast: '10.129.41.255' },
+     [ { address: '10.129.41.23',
+         netmask: '255.255.255.0',
+         broadcast: '10.129.41.255' } ],
     active: true },
   { hardwareAddress: '4e:98:56:5b:36:97',
     internal: false,
@@ -113,7 +113,7 @@ Example output:
        up: true },
     index: 11,
     mtu: 1484,
-    ipv6: { address: 'fe80::4c98:56ff:fe5b:3697', prefixLength: 64 },
+    ipv6: [ { address: 'fe80::4c98:56ff:fe5b:3697', prefixLength: 64 } ],
     active: true } ]
 ```
 
@@ -173,11 +173,11 @@ Each interface returned is an object with the following properties:
 * `hardwareAddress` (_optional_, `String`)
 * `index` (_optional_, `String`)
 * `internal` (_required_, `Boolean`)
-* `ipv4` (_optional_, `Object`)
+* `ipv4` (_optional_, `Array`)
   * `address` (_optional_, `String`)
   * `broadcast` (_optional_, `String`)
   * `netmask` (_optional_, `String`)
-* `ipv6` (_optional_, `Object`)
+* `ipv6` (_optional_, `Array`)
   * `address` (_optional_, `String`)
   * `prefixLength` (_optional_, `Number`)
 * `metric` (_optional_, `Number`)

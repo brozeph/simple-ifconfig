@@ -139,14 +139,17 @@ vboxnet0: flags=8943<UP,BROADCAST,RUNNING,PROMISC,SIMPLEX,MULTICAST> mtu 1500
 
 				should.exist(client.options.ifconfigPath);
 				client.options.ifconfigPath.should.equal('/sbin/ifconfig');
-				should.exist(client.options.includeInternal);
-				client.options.includeInternal.should.be.false;
+				should.exist(client.options.active);
+				client.options.active.should.be.true;
+				should.exist(client.options.internal);
+				client.options.internal.should.be.false;
 			});
 
 			it('should override options when specified', () => {
 				var client = new lib.NetworkInfo({
 					ifconfigPath : '/usr/local/bin/ifconfig',
-					includeInternal : true
+					active : false,
+					internal : true
 				});
 
 				should.exist(client);
@@ -155,8 +158,10 @@ vboxnet0: flags=8943<UP,BROADCAST,RUNNING,PROMISC,SIMPLEX,MULTICAST> mtu 1500
 
 				should.exist(client.options.ifconfigPath);
 				client.options.ifconfigPath.should.equal('/usr/local/bin/ifconfig');
-				should.exist(client.options.includeInternal);
-				client.options.includeInternal.should.be.true;
+				should.exist(client.options.active);
+				client.options.active.should.be.false;
+				should.exist(client.options.internal);
+				client.options.internal.should.be.true;
 			});
 		});
 

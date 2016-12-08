@@ -10,11 +10,11 @@ const
 	BASE_16 = 16,
 	CHAR_ADVANCE = 2,
 	debug = logger('simple-ifconfig'),
-	DEFAULT_HARDWARE_ADDRESS = '00:00:00:00:00:00',
+	DEFAULT_HARDWARE_ADDR = '00:00:00:00:00:00',
 	DEFAULT_OPTIONS = {
+		active : true,
 		ifconfigPath : '/sbin/ifconfig',
-		includeInactive : false,
-		includeInternal : false
+		internal : false
 	},
 	DEFAULT_METRIC = 99,
 	RE_DELIM = /\ |\:/,
@@ -69,7 +69,7 @@ const
 		varmtu : /(^|[\ \t\,]*)var\_mtu($|[\ \t\,]*)/i,
 		xresolv : /(^|[\ \t\,]*)xresolv($|[\ \t\,]*)/i
 	},
-	RE_HARDWARE_ADDRESS = /(ether|hwaddr)\ +(([0-9a-f]{2}[\:\-]{0,1}){6})/i,
+	RE_HARDWARE_ADDR = /(ether|hwaddr)\ +(([0-9a-f]{2}[\:\-]{0,1}){6})/i,
 	RE_IFCONFIG_FLAGS = /<?([a-z\,\ \t\_]*)\>?(([\ \t]*mtu[\:\ \t]+[0-9]+)|([\ \t]*metric[\:\ \t]+[0-9]+)|([\ \t]*index[\:\ \t]+[0-9]+))+/i,
 	RE_IFCONFIG_IPV4 = /^\s*inet\s/,
 	RE_IFCONFIG_IPV6 = /^\s*inet6\s/,
@@ -79,12 +79,13 @@ const
 	RE_LINUX_MASK = /^mask\:/i,
 	RE_METRIC = /metric[\ \:]+[0-9]+/i,
 	RE_MTU = /mtu[\ \:]+[0-9]+/i,
+	RE_NUMBER = /^[1-9]{2,}/,
+	RE_STATUS = /^\s*(status)|((r|t)x\ bytes)/i,
 	RE_UNIX_ADDR = /^inet$/i,
 	RE_UNIX_BCAST = /^broadcast$/i,
 	RE_UNIX_IPV6_ADDR = /^inet6$/i,
 	RE_UNIX_IPV6_PREFIX_LENGTH = /^prefixlen$/i,
 	RE_UNIX_MASK = /^netmask$/i,
-	RE_UNIX_STATUS = /^\s*status/i,
 	RE_UNIX_STATUS_ACTIVE = /\ active$/i,
 	VERBOSE = '-v';
 
@@ -92,9 +93,10 @@ function _ensureDefaultOptions () {
 	Object
 		.getOwnPropertyNames(DEFAULT_OPTIONS)
 		.forEach((optionName) => {
+			debug('examining option %s (%s)', optionName, this.options[optionName]);
 			if (_isNullOrUndefined(this.options[optionName])) {
 				debug(
-					'setting option %s to %o',
+					'applying default value for option %s (%o)',
 					optionName,
 					DEFAULT_OPTIONS[optionName]);
 
@@ -129,7 +131,7 @@ function _ifconfig (...args) {
 		// handle command exit
 		ifconfig.on('close', (code) => {
 			debug(
-				'%s %s: command completed with code: %s',
+				'%s %s command completed (code: %s)',
 				this.options.ifconfigPath,
 				args.join(' '),
 				code);
@@ -148,7 +150,7 @@ function _ifconfig (...args) {
 		// handle errors while attempting to execute command
 		ifconfig.on('error', (err) => {
 			err.command = `${this.options.ifconfigPath} ${args.join(' ')}`;
-			debug('%s: command failed: %s', err.command, err.message);
+			debug('%s command failed (error: %s)', err.command, err.message);
 
 			return reject(err);
 		});
@@ -165,11 +167,12 @@ function _isNullOrUndefined (value) {
 
 function _parseInterfaceInfo (ifconfigResult) {
 	let
+		addr,
 		hardwareInterfaces = new Map(),
 		iface;
 
 	// ensure an entry for the default hardware address
-	hardwareInterfaces.set(DEFAULT_HARDWARE_ADDRESS, []);
+	hardwareInterfaces.set(DEFAULT_HARDWARE_ADDR, []);
 
 	// break the ifconfig command result into lines and parse them 1 by 1...
 	ifconfigResult.split(/\r?\n/).forEach((line) => {
@@ -182,13 +185,14 @@ function _parseInterfaceInfo (ifconfigResult) {
 
 			// prior to creating a new iface, check to see if the previously parsed
 			// one should be added to the map
-			if (iface && iface.hardwareAddress === DEFAULT_HARDWARE_ADDRESS) {
+			if (iface && iface.hardwareAddress === DEFAULT_HARDWARE_ADDR) {
 				hardwareInterfaces.get(iface.hardwareAddress).push(iface);
 			}
 
 			// create new iface...
 			iface = {
-				hardwareAddress : DEFAULT_HARDWARE_ADDRESS,
+				hardwareAddress : DEFAULT_HARDWARE_ADDR,
+				active : false,
 				internal : true
 			};
 
@@ -204,8 +208,9 @@ function _parseInterfaceInfo (ifconfigResult) {
 			line = line.slice(1).join(' ');
 		}
 
-		if (RE_HARDWARE_ADDRESS.test(line)) {
-			terms = line.match(RE_HARDWARE_ADDRESS);
+		// look for hardware address
+		if (RE_HARDWARE_ADDR.test(line)) {
+			terms = line.match(RE_HARDWARE_ADDR);
 			debug(
 				'hardware address of %s found for interface %s',
 				terms[2],
@@ -260,34 +265,34 @@ function _parseInterfaceInfo (ifconfigResult) {
 
 		// look for IPv4 info...
 		if (RE_IFCONFIG_IPV4.test(line)) {
-			debug('IPv4 information found for interface %s', iface.name);
+			debug('IPv4 information found for interface %s (%s)', iface.name, line);
 
-
-			iface.ipv4 = iface.ipv4 || {};
+			addr = {};
+			iface.ipv4 = (iface.ipv4 || []).concat([addr]);
 			terms = line.split(/\s+/);
 
 			terms.forEach((term, i) => {
 				// linux formatting - addr:10.0.2.15
 				if (RE_LINUX_ADDR.test(term)) {
-					iface.ipv4.address = term.split(RE_LINUX_ADDR)[1];
+					addr.address = term.split(RE_LINUX_ADDR)[1];
 					return;
 				}
 
 				// linux formatting - Bcast:10.0.2.255
 				if (RE_LINUX_BCAST.test(term)) {
-					iface.ipv4.broadcast = term.split(RE_LINUX_BCAST)[1];
+					addr.broadcast = term.split(RE_LINUX_BCAST)[1];
 					return;
 				}
 
 				// linux formatting - Mask:255.255.255.0
 				if (RE_LINUX_MASK.test(term)) {
-					iface.ipv4.netmask = term.split(RE_LINUX_MASK)[1];
+					addr.netmask = term.split(RE_LINUX_MASK)[1];
 					return;
 				}
 
 				// unix formatting - address is 1st term
 				if (RE_UNIX_ADDR.test(term)) {
-					iface.ipv4.address = terms[i + 1];
+					addr.address = terms[i + 1];
 					return;
 				}
 
@@ -299,9 +304,9 @@ function _parseInterfaceInfo (ifconfigResult) {
 					if (/^0x/.test(netmask)) {
 						// iterate 2 chars at a time converting from hex to decimal
 						for (let i = CHAR_ADVANCE; i < netmask.length; i += CHAR_ADVANCE) {
-							iface.ipv4.netmask = [
-								iface.ipv4.netmask || '',
-								iface.ipv4.netmask ? '.' : '',
+							addr.netmask = [
+								addr.netmask || '',
+								addr.netmask ? '.' : '',
 								parseInt(
 									['0x', netmask.slice(i, i + CHAR_ADVANCE)].join(''),
 									BASE_16)].join('');
@@ -311,40 +316,41 @@ function _parseInterfaceInfo (ifconfigResult) {
 					}
 
 					// set netmask in teh event it is not in hexidecimal format
-					iface.ipv4.netmask = netmask;
+					addr.netmask = netmask;
 					return;
 				}
 
 				// unix formatting - broadcast 10.129.8.255
 				if (RE_UNIX_BCAST.test(term)) {
-					iface.ipv4.broadcast = terms[i + 1];
+					addr.broadcast = terms[i + 1];
 				}
 			});
 		}
 
 		// look for IPv6 info
 		if (RE_IFCONFIG_IPV6.test(line)) {
-			debug('IPv6 information found for interface %s', iface.name);
+			debug('IPv6 information found for interface %s (%s)', iface.name, line);
 
-			iface.ipv6 = iface.ipv6 || {};
+			addr = {};
+			iface.ipv6 = (iface.ipv6 || []).concat([addr]);
 			terms = line.split(/\ +/);
 
 			terms.some((term, i) => {
 				// check for linux address reference
 				if (RE_LINUX_ADDR.test(term)) {
 					terms = terms[i + 1].split(/\//);
-					iface.ipv6.address = terms[0];
-					iface.ipv6.prefixLength = terms[1]
+					addr.address = terms[0];
+					addr.prefixLength = terms[1];
 
 					return true;
 				}
 
 				if (RE_UNIX_IPV6_ADDR.test(term.trim())) {
-					iface.ipv6.address = terms[i + 1].split(/\%/)[0];
+					addr.address = terms[i + 1].split(/\%/)[0];
 				}
 
 				if (RE_UNIX_IPV6_PREFIX_LENGTH.test(term)) {
-					iface.ipv6.prefixLength = parseInt(terms[i + 1], 10);
+					addr.prefixLength = parseInt(terms[i + 1], 10);
 
 					return true;
 				}
@@ -354,15 +360,18 @@ function _parseInterfaceInfo (ifconfigResult) {
 		}
 
 		// look for status
-		if (RE_UNIX_STATUS.test(line)) {
+		if (RE_STATUS.test(line)) {
+			debug('status information found for interface %s (%s)', iface.name, line);
+
 			terms = line.split(/\:/g);
-			debug('interface %s is %s', iface.name, terms[1]);
-			iface.active = RE_UNIX_STATUS_ACTIVE.test(terms[1]);
+			iface.active =
+				RE_UNIX_STATUS_ACTIVE.test(terms[1]) ||
+				RE_NUMBER.test(terms[1]);
 		}
 	});
 
 	// pick up any trailing interfaces where the hardware address was not defined
-	if (iface && iface.hardwareAddress === DEFAULT_HARDWARE_ADDRESS) {
+	if (iface && iface.hardwareAddress === DEFAULT_HARDWARE_ADDR) {
 		hardwareInterfaces.get(iface.hardwareAddress).push(iface);
 	}
 
@@ -370,10 +379,10 @@ function _parseInterfaceInfo (ifconfigResult) {
 	hardwareInterfaces.forEach((interfaces) => {
 		this._interfaces = this._interfaces
 			.concat(interfaces
-				// filter internal interfaces as applicable
-				.filter((iface) => this.options.includeInternal || !iface.internal)
-				// filter inactive interfaces as applicable
-				.filter((iface) => this.options.includeInactive || iface.active));
+				// filter out internal interfaces as applicable
+				.filter((iface) => this.options.internal || !iface.internal)
+				// filter out non-active interfaces as applicable
+				.filter((iface) => !this.options.active || iface.active));
 	});
 
 	this._interfaces.sort((a, b) => (
