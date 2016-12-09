@@ -1,5 +1,7 @@
 # simple-ifconfig
 
+[![Build Status](https://travis-ci.org/brozeph/simple-ifconfig.svg?branch=master)](https://travis-ci.org/brozeph/simple-ifconfig) [![Coverage Status](https://coveralls.io/repos/github/brozeph/simple-ifconfig/badge.svg?branch=master)](https://coveralls.io/github/brozeph/simple-ifconfig?branch=master)
+
 This module aims to additional information beyond what the `os.networkInterfaces()` method returns (via Node) for each detected network interface.
 
 ## Requirements
