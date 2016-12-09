@@ -4,4 +4,5 @@ node_modules
 reports
 notes.md
 /src/
+/test/
 /test/sandbox/
