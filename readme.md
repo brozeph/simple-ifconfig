@@ -123,8 +123,8 @@ Example output:
 
 Each interface returned is an object with the following properties:
 
-* `active` (_required_, `Boolean`)
-* `flags` (_optional_, `String`)
+* `active` (_required_, `Boolean`) - indicates whether or not the interface is connected and actively transmitting data
+* `flags` (_optional_, `String`) - a sub-document that provides additional detail regarding the interface and its hardware configuration
   * `addrconf` (_optional_, `Boolean`)
   * `allmulti` (_optional_, `Boolean`)
   * `anycast` (_optional_, `Boolean`)
@@ -172,16 +172,16 @@ Each interface returned is an object with the following properties:
   * `virtual` (_optional_, `Boolean`)
   * `varmtu` (_optional_, `Boolean`)
   * `xresolv` (_optional_, `Boolean`)
-* `hardwareAddress` (_optional_, `String`)
-* `index` (_optional_, `String`)
-* `internal` (_required_, `Boolean`)
-* `ipv4` (_optional_, `Array`)
+* `hardwareAddress` (_required_, `String`) - the MAC address assigned to the interface
+* `index` (_optional_, `String`) - on `Darwin` OS, this is functionality equivalent to `metric`... it is the prioritized order of the interface to the OS
+* `internal` (_required_, `Boolean`) - indicates whether the interface exists for internal use within the OS (i.e. a loopback interface)
+* `ipv4` (_optional_, `Array`) - IPv4 address information for the interface
   * `address` (_optional_, `String`)
   * `broadcast` (_optional_, `String`)
   * `netmask` (_optional_, `String`)
-* `ipv6` (_optional_, `Array`)
+* `ipv6` (_optional_, `Array`) - IPv6 address information for the interface
   * `address` (_optional_, `String`)
   * `prefixLength` (_optional_, `Number`)
-* `metric` (_optional_, `Number`)
-* `mtu` (_optional_, `Number`)
-* `name` (_required_, `String`)
+* `metric` (_optional_, `Number`) - the prioritized order of the interface to the OS
+* `mtu` (_optional_, `Number`) - the maximum transmission unit size for the interface
+* `name` (_required_, `String`) - the name assigned to the interface

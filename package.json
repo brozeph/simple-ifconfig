@@ -6,7 +6,11 @@
   "author": "Joshua Thomas (http://github.com/brozeph)",
   "engine": "node >= 4",
   "keywords": [
-    "ifconfig"
+    "ifconfig",
+    "network",
+    "broadcast address"
+    "ipv4",
+    "ipv6"
   ],
   "repository": {
     "type": "git",
