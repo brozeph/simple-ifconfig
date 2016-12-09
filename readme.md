@@ -11,8 +11,6 @@ This module aims to additional information beyond what the `os.networkInterfaces
 
 ## Installation
 
-_PENDING NPM PUBLISH_
-
 ```bash
 npm install simple-ifconfig
 ```
