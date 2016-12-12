@@ -263,23 +263,32 @@ lo0: flags=8049<UP,LOOPBACK,RUNNING,MULTICAST> metric 0 mtu 16384
 	describe('#listInterfaces (linux)', () => {
 		beforeEach(() => {
 			mockOutput = `
-enp0s3    Link encap:Ethernet  HWaddr 08:00:27:a9:57:5a
-        inet addr:10.0.2.15  Bcast:10.0.2.255  Mask:255.255.255.0
-        inet6 addr: fe80::a00:27ff:fea9:575a/64 Scope:Link
-        UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
-        RX packets:1358 errors:0 dropped:0 overruns:0 frame:0
-        TX packets:649 errors:0 dropped:0 overruns:0 carrier:0
-        collisions:0 txqueuelen:1000
-        RX bytes:1821168 (1.8 MB)  TX bytes:49319 (49.3 KB)
+enp2s0f0  Link encap:Ethernet  HWaddr a8:20:66:19:79:fe
+          UP BROADCAST MULTICAST  MTU:1500  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+          Interrupt:16
 
 lo        Link encap:Local Loopback
-        inet addr:127.0.0.1  Mask:255.0.0.0
-        inet6 addr: ::1/128 Scope:Host
-        UP LOOPBACK RUNNING  MTU:65536  Metric:1
-        RX packets:0 errors:0 dropped:0 overruns:0 frame:0
-        TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
-        collisions:0 txqueuelen:1
-        RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          inet6 addr: ::1/128 Scope:Host
+          UP LOOPBACK RUNNING  MTU:65536  Metric:1
+          RX packets:389 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:389 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1
+          RX bytes:34039 (34.0 KB)  TX bytes:34039 (34.0 KB)
+
+wlp3s0b1  Link encap:Ethernet  HWaddr 20:c9:d0:c6:bd:5b
+          inet addr:10.129.41.182  Bcast:10.129.41.255  Mask:255.255.255.0
+          inet6 addr: fe80::15a:a71:f50c:c2ef/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:2605 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:1416 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:1593582 (1.5 MB)  TX bytes:283859 (283.8 KB)
+
 `;
 		});
 
@@ -293,17 +302,17 @@ lo        Link encap:Local Loopback
 					interfaces.should.be.an.Array;
 					interfaces.should.have.length(1);
 
-					interfaces[0].hardwareAddress.should.equal('08:00:27:a9:57:5a');
+					interfaces[0].hardwareAddress.should.equal('20:c9:d0:c6:bd:5b');
 					interfaces[0].active.should.equal(true);
-					interfaces[0].name.should.equal('enp0s3');
+					interfaces[0].name.should.equal('wlp3s0b1');
 					interfaces[0].ipv4.should.be.an('array');
 					interfaces[0].ipv4.should.have.length(1);
-					interfaces[0].ipv4[0].address.should.equal('10.0.2.15');
-					interfaces[0].ipv4[0].broadcast.should.equal('10.0.2.255');
+					interfaces[0].ipv4[0].address.should.equal('10.129.41.182');
+					interfaces[0].ipv4[0].broadcast.should.equal('10.129.41.255');
 					interfaces[0].ipv4[0].netmask.should.equal('255.255.255.0');
 					interfaces[0].ipv6.should.be.an('array');
 					interfaces[0].ipv6.should.have.length(1);
-					interfaces[0].ipv6[0].address.should.equal('fe80::a00:27ff:fea9:575a');
+					interfaces[0].ipv6[0].address.should.equal('fe80::15a:a71:f50c:c2ef');
 					interfaces[0].ipv6[0].prefixLength.should.equal(64);
 					should.exist(interfaces[0].flags);
 					interfaces[0].flags.broadcast.should.be.true;
@@ -329,7 +338,7 @@ lo        Link encap:Local Loopback
 				.then((interfaces) => {
 					should.exist(interfaces);
 					interfaces.should.be.an.Array;
-					interfaces.should.have.length(2);
+					interfaces.should.have.length(3);
 
 					return done();
 				})
