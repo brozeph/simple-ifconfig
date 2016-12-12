@@ -19,7 +19,7 @@
   "main": "./dist",
   "scripts": {
     "prepublish": "gulp build",
-    "test": "gulp lint && gulp test-coverage"
+    "test": "gulp lint && gulp test-coverage && gulp coveralls"
   },
   "directories": {
     "test": "test"
