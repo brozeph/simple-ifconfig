@@ -2,7 +2,7 @@
   "name": "simple-ifconfig",
   "description": "a client library for interacting with ifconfig on *nix machines",
   "private": false,
-  "version": "0.1.1",
+  "version": "0.1.2",
   "author": "Joshua Thomas (http://github.com/brozeph)",
   "engine": "node >= 4",
   "keywords": [
@@ -19,7 +19,7 @@
   "main": "./dist",
   "scripts": {
     "prepublish": "gulp build",
-    "test": "gulp lint && gulp test-coverage && gulp coveralls"
+    "test": "gulp lint && gulp coveralls"
   },
   "directories": {
     "test": "test"
