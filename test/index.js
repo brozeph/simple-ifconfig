@@ -65,58 +65,58 @@ describe('unit tests for simple-ifconfig', function () {
 	});
 
 	describe('#', () => {
-			it('should default options when not provided', () => {
-				let client = new lib.NetworkInfo();
+		it('should default options when not provided', () => {
+			let client = new lib.NetworkInfo();
 
-				should.exist(client);
-				should.exist(client.listInterfaces);
-				should.exist(client.options);
+			should.exist(client);
+			should.exist(client.listInterfaces);
+			should.exist(client.options);
 
-				should.exist(client.options.ifconfigPath);
-				client.options.ifconfigPath.should.equal('/sbin/ifconfig');
-				should.exist(client.options.active);
-				client.options.active.should.be.true;
-				should.exist(client.options.internal);
-				client.options.internal.should.be.false;
-			});
-
-			it('should override options when specified', () => {
-				let client = new lib.NetworkInfo({
-					ifconfigPath : '/usr/local/bin/ifconfig',
-					active : false,
-					internal : true
-				});
-
-				should.exist(client);
-				should.exist(client.listInterfaces);
-				should.exist(client.options);
-
-				should.exist(client.options.ifconfigPath);
-				client.options.ifconfigPath.should.equal('/usr/local/bin/ifconfig');
-				should.exist(client.options.active);
-				client.options.active.should.be.false;
-				should.exist(client.options.internal);
-				client.options.internal.should.be.true;
-			});
-
-			it('should call the supplied ifconfig command', (done) => {
-				let client = new lib.NetworkInfo({
-					ifconfigPath : '/usr/local/bin/ifconfig'
-				});
-
-				should.exist(client);
-
-				client
-					.listInterfaces()
-					.then(() => {
-						should.exist(commandCalled);
-						commandCalled.command.should.equal('/usr/local/bin/ifconfig');
-
-						return done();
-					})
-					.catch(done);
-			});
+			should.exist(client.options.ifconfigPath);
+			client.options.ifconfigPath.should.equal('/sbin/ifconfig');
+			should.exist(client.options.active);
+			client.options.active.should.be.true;
+			should.exist(client.options.internal);
+			client.options.internal.should.be.false;
 		});
+
+		it('should override options when specified', () => {
+			let client = new lib.NetworkInfo({
+				ifconfigPath : '/usr/local/bin/ifconfig',
+				active : false,
+				internal : true
+			});
+
+			should.exist(client);
+			should.exist(client.listInterfaces);
+			should.exist(client.options);
+
+			should.exist(client.options.ifconfigPath);
+			client.options.ifconfigPath.should.equal('/usr/local/bin/ifconfig');
+			should.exist(client.options.active);
+			client.options.active.should.be.false;
+			should.exist(client.options.internal);
+			client.options.internal.should.be.true;
+		});
+
+		it('should call the supplied ifconfig command', (done) => {
+			let client = new lib.NetworkInfo({
+				ifconfigPath : '/usr/local/bin/ifconfig'
+			});
+
+			should.exist(client);
+
+			client
+				.listInterfaces()
+				.then(() => {
+					should.exist(commandCalled);
+					commandCalled.command.should.equal('/usr/local/bin/ifconfig');
+
+					return done();
+				})
+				.catch(done);
+		});
+	});
 
 	describe('#listInterfaces', () => {
 		it('should properly handle command error response', (done) => {
@@ -174,7 +174,7 @@ lo0: flags=8049<UP,LOOPBACK,RUNNING,MULTICAST> metric 0 mtu 16384
 `;
 		});
 
-		it('should properly parse linux ifconfig output (defaults)', (done) => {
+		it('should properly parse bsd ifconfig output (defaults)', (done) => {
 			let client = new lib.NetworkInfo();
 
 			client
@@ -289,6 +289,14 @@ wlp3s0b1  Link encap:Ethernet  HWaddr 20:c9:d0:c6:bd:5b
           collisions:0 txqueuelen:1000
           RX bytes:1593582 (1.5 MB)  TX bytes:283859 (283.8 KB)
 
+enp1s0    Link encap:Ethernet  HWaddr 84:39:be:63:cd:85
+          inet addr:10.129.41.81  Bcast:10.129.41.255  Mask:255.255.255.0
+          inet6 addr: fe80::8639:beff:fe63:cd85/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:2799568 errors:0 dropped:423 overruns:0 frame:0
+          TX packets:1137373 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:1047078290 (1.0 GB)  TX bytes:152740398 (152.7 MB)
 `;
 		});
 
@@ -300,7 +308,7 @@ wlp3s0b1  Link encap:Ethernet  HWaddr 20:c9:d0:c6:bd:5b
 				.then((interfaces) => {
 					should.exist(interfaces);
 					interfaces.should.be.an.Array;
-					interfaces.should.have.length(1);
+					interfaces.should.have.length(2);
 
 					interfaces[0].hardwareAddress.should.equal('20:c9:d0:c6:bd:5b');
 					interfaces[0].active.should.equal(true);
@@ -338,7 +346,7 @@ wlp3s0b1  Link encap:Ethernet  HWaddr 20:c9:d0:c6:bd:5b
 				.then((interfaces) => {
 					should.exist(interfaces);
 					interfaces.should.be.an.Array;
-					interfaces.should.have.length(3);
+					interfaces.should.have.length(4);
 
 					return done();
 				})
