@@ -79,7 +79,7 @@ const
 	RE_LINUX_MASK = /^mask\:/i,
 	RE_METRIC = /metric[\ \:]+[0-9]+/i,
 	RE_MTU = /mtu[\ \:]+[0-9]+/i,
-	RE_NUMBER = /^[1-9]{2,}/,
+	RE_NUMBER = /^[0-9]{2,}/,
 	RE_STATUS = /^\s*(status)|((r|t)x\ bytes)/i,
 	RE_UNIX_ADDR = /^inet$/i,
 	RE_UNIX_BCAST = /^broadcast$/i,
