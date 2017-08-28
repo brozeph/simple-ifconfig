@@ -46,6 +46,42 @@ let networking = new NetworkInfo({
 // work with networking instance...
 ```
 
+### #applySettings
+
+Uses `ifconfig` to set `hardwareAddress`, `ipv4`, `mtu` as well as `up`/`down` (active) status for an interface.
+
+`new NetworkInfo().applySettings(interfaceName, settings)`
+
+```javascript
+import { NetworkInfo } from 'simple-ifconfig';
+
+let networking = new NetworkInfo();
+
+networking
+  .applySettings(`eth0`, {
+    active : true,
+    hardwareAddress : 'AA:BB:CC:00:11:22',
+    ipv4 : {
+      address : '192.168.0.2',
+      broadcast : '192.168.0.1',
+      netmask : '255.255.255.0'
+    },
+    mtu : 1800
+  })
+  .then(console.log)
+  .catch(console.error);
+```
+
+* `active` (_optional_, `Boolean`) - brings the interface specified up when `true` or down when `false`
+* `hardwareAddress` (_optional_, `String`) - will change the MAC address of the specified interface to the provided value when specified
+* `ipv4` (_optional_, `Object`) - will allow for specifying IP address (STATIC) configuration for the specified interface
+  * `address` (_optional_, `String`)
+  * `broadcast` (_optional_, `String`)
+  * `netmask` (_optional_, `String`)
+* `mtu` (_optional_, `Number`) - when provided, sets the MTU for the specified interface
+
+**note**: in order to clear a statically configured IP address, most OS variants support providing `0.0.0.0` to "unset" the previously specified `address`, `broadcast` and `subnet`
+
 ### #listInterfaces
 
 Retrieves an array of available interfaces, optionally filtered according to [options](#options-optional) provided to the [constructor](#constructor).

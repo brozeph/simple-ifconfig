@@ -18,7 +18,7 @@ describe('unit tests for simple-ifconfig', function () {
 
 	let
 		ifconfigMock = mockSpawn(),
-		commandCalled = {},
+		commandsCalled = [],
 		mockErr = '',
 		mockExitCode = 0,
 		mockOutput = '';
@@ -39,11 +39,11 @@ describe('unit tests for simple-ifconfig', function () {
 			}
 
 			// track what was called
-			commandCalled = {
+			commandsCalled.push({
 				command : command,
 				args : args,
 				opts : opts
-			};
+			});
 
 			// handle response
 			return function (done) {
@@ -59,6 +59,7 @@ describe('unit tests for simple-ifconfig', function () {
 
 	beforeEach(function () {
 		// reset mock outputs
+		commandsCalled = [];
 		mockErr = '';
 		mockExitCode = 0;
 		mockOutput = '';
@@ -109,8 +110,156 @@ describe('unit tests for simple-ifconfig', function () {
 			client
 				.listInterfaces()
 				.then(() => {
-					should.exist(commandCalled);
-					commandCalled.command.should.equal('/usr/local/bin/ifconfig');
+					should.exist(commandsCalled);
+					commandsCalled.should.have.length(1);
+					commandsCalled[0].command.should.equal('/usr/local/bin/ifconfig');
+
+					return done();
+				})
+				.catch(done);
+		});
+	});
+
+	describe('#applySettings', () => {
+		let client;
+
+		beforeEach(() => {
+			client = new lib.NetworkInfo();
+
+			mockOutput = `
+em0: flags=8843<UP,BROADCAST,RUNNING,SIMPLEX,MULTICAST> metric 0 mtu 1500
+	options=9b<RXCSUM,TXCSUM,VLAN_MTU,VLAN_HWTAGGING,VLAN_HWCSUM>
+	ether 08:00:27:35:48:46
+	inet6 fe80::a00:27ff:fe35:4846%em0 prefixlen 64 scopeid 0x1
+	inet 10.0.2.4 netmask 0xffffff00 broadcast 10.0.2.255
+	nd6 options=23<PERFORMNUD,ACCEPT_RTADV,AUTO_LINKLOCAL>
+	media: Ethernet autoselect (1000baseT <full-duplex>)
+	status: active
+lo0: flags=8049<UP,LOOPBACK,RUNNING,MULTICAST> metric 0 mtu 16384
+	options=600003<RXCSUM,TXCSUM,RXCSUM_IPV6,TXCSUM_IPV6>
+	inet6 ::1 prefixlen 128
+	inet6 fe80::1%lo0 prefixlen 64 scopeid 0x2
+	inet 127.0.0.1 netmask 0xff000000
+	nd6 options=21<PERFORMNUD,AUTO_LINKLOCAL>
+	groups: lo
+`;
+		});
+
+		it('should properly validate interface name', (done) => {
+			client
+				.applySettings()
+				.then(() => done(new Error('should properly validate interface name')))
+				.catch((err) => {
+					should.exist(err);
+					err.message.should.contain('interface name is required');
+
+					return done();
+				});
+		});
+
+		it('should properly validate settings', (done) => {
+			client
+				.applySettings('en0')
+				.then(() => done(new Error('should properly validate interface name')))
+				.catch((err) => {
+					should.exist(err);
+					err.message.should.contain('settings are required');
+
+					return done();
+				});
+		});
+
+		it('should attempt to bring interface down when active is false', (done) => {
+			client
+				.applySettings('en0', { active : false })
+				.then((result) => {
+					should.exist(result);
+					should.exist(commandsCalled);
+					commandsCalled.should.have.length(3);
+					commandsCalled[1].args.should.have.length(2);
+					commandsCalled[1].args[0].should.equal('en0');
+					commandsCalled[1].args[1].should.equal('down');
+
+					return done();
+				})
+				.catch(done);
+		});
+
+		it('should attempt to bring interface up when active is true', (done) => {
+			client
+				.applySettings('en0', { active : true })
+				.then(() => {
+					should.exist(commandsCalled);
+					commandsCalled.should.have.length(3);
+					commandsCalled[1].args.should.have.length(2);
+					commandsCalled[1].args[0].should.equal('en0');
+					commandsCalled[1].args[1].should.equal('up');
+
+					return done();
+				})
+				.catch(done);
+		});
+
+		it('should attempt to set hardware address when provided', (done) => {
+			client
+				.applySettings('en0', { hardwareAddress : '00:00:00:00:00:00' })
+				.then(() => {
+					should.exist(commandsCalled);
+					commandsCalled.should.have.length(3);
+					commandsCalled[1].args.should.have.length(4);
+					commandsCalled[1].args[3].should.equal('00:00:00:00:00:00');
+
+					return done();
+				})
+				.catch(done);
+		});
+
+		it('should not attempt to apply ipv4 settings when no address, broadcast or netmask is provided', (done) => {
+			client
+				.applySettings('en0', { ipv4 : {
+					address : null,
+					broadcast : null,
+					netmask : null
+				} })
+				.then(() => {
+					should.exist(commandsCalled);
+					commandsCalled.should.have.length(2);
+
+					return done();
+				})
+				.catch(done);
+		});
+
+		it('should attempt to apply ipv4 settings when provided', (done) => {
+			client
+				.applySettings('en0', { ipv4 : {
+					address : '127.0.0.1',
+					broadcast : '127.0.0.0',
+					netmask : '255.255.0.0'
+				} })
+				.then(() => {
+					should.exist(commandsCalled);
+					commandsCalled.should.have.length(3);
+					commandsCalled[1].args[0].should.equal('en0');
+					commandsCalled[1].args[1].should.equal('127.0.0.1');
+					commandsCalled[1].args[2].should.equal('broadcast');
+					commandsCalled[1].args[3].should.equal('127.0.0.0');
+					commandsCalled[1].args[4].should.equal('netmask');
+					commandsCalled[1].args[5].should.equal('255.255.0.0');
+
+					return done();
+				})
+				.catch(done);
+		});
+
+		it('should attempt to set mtu when provided', (done) => {
+			client
+				.applySettings('en0', { mtu : 1500 })
+				.then(() => {
+					should.exist(commandsCalled);
+					commandsCalled.should.have.length(3);
+					commandsCalled[1].args.should.have.length(3);
+					commandsCalled[1].args[2].should.equal(1500);
 
 					return done();
 				})

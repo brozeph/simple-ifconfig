@@ -2,7 +2,7 @@
   "name": "simple-ifconfig",
   "description": "a client library for interacting with ifconfig on *nix machines",
   "private": false,
-  "version": "0.1.2",
+  "version": "0.2.0",
   "author": "Joshua Thomas (http://github.com/brozeph)",
   "engine": "node >= 4",
   "keywords": [
