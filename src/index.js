@@ -463,9 +463,9 @@ export class NetworkInfo {
 			result = await this::_ifconfig(name, 'mtu', settings.mtu);
 
 			debug(
-			'result of setting mtu for interface %s: %o',
-			name,
-			result);
+				'result of setting mtu for interface %s: %o',
+				name,
+				result);
 		}
 
 		// reload interface settings after applying them...
