@@ -10,6 +10,8 @@ const
 	BASE_16 = 16,
 	CHAR_ADVANCE = 2,
 	debug = logger('simple-ifconfig'),
+	DEFAULT_ACTIVE_DOWN = 'down',
+	DEFAULT_ACTIVE_UP = 'up',
 	DEFAULT_HARDWARE_ADDR = '00:00:00:00:00:00',
 	DEFAULT_OPTIONS = {
 		active : true,
@@ -366,6 +368,110 @@ export class NetworkInfo {
 		this._options = options || {};
 
 		this::_ensureDefaultOptions();
+	}
+
+	async applySettings (name, settings) {
+		if (_isNullOrUndefined(name)) {
+			throw new Error('interface name is required');
+		}
+
+		if (_isNullOrUndefined(settings)) {
+			throw new Error('settings are required');
+		}
+
+		// get the interface... if it does not exist, this will result in error
+		let
+			iface = await this::_ifconfig(name),
+			result;
+
+		// check to see if adapter should be enabled / disabled
+		if (!_isNullOrUndefined(settings.active)) {
+			debug(
+				'attempt %sabling interface %s',
+				settings.active ? 'en' : 'dis',
+				name);
+
+			if (settings.active) {
+				result = await this::_ifconfig(name, DEFAULT_ACTIVE_UP);
+			} else {
+				result = await this::_ifconfig(name, DEFAULT_ACTIVE_DOWN);
+			}
+
+			debug(
+				'result of %sabling %s: %o',
+				settings.active ? 'en' : 'dis',
+				name,
+				result);
+		}
+
+		// check for hardware address update
+		if (!_isNullOrUndefined(settings.hardwareAddress)) {
+			debug('attempt setting hardware address for interface %s', name);
+
+			result = await this::_ifconfig(
+				name,
+				'hw',
+				'ether',
+				settings.hardwareAddress);
+
+			debug(
+			'result of setting hardware address for interface %s: %o',
+			name,
+			result);
+		}
+
+		// check for ipv4 settings updates
+		if (!_isNullOrUndefined(settings.ipv4)) {
+			debug('attempt ipv4 settings update');
+
+			let
+				args = [name],
+				addr = settings.ipv4;
+
+			// if an array, select the first object
+			if (Array.isArray(addr)) {
+				addr = addr[0];
+			}
+
+			if (!_isNullOrUndefined(addr.address)) {
+				debug('applying ipv4 hardware address: %s', addr.address);
+				args.push(addr.address);
+			}
+
+			if (!_isNullOrUndefined(addr.broadcast)) {
+				debug('applying ipv4 hardware broadcast: %s', addr.broadcast);
+				args.push('broadcast', addr.broadcast);
+			}
+
+			if (!_isNullOrUndefined(addr.netmask)) {
+				debug('applying ipv4 hardware netmask: %s', addr.netmask);
+				args.push('netmask', addr.netmask);
+			}
+
+			result = await this::_ifconfig(...args);
+
+			debug(
+				'result of ipv4 settings update to %s: %o',
+				name,
+				result);
+		}
+
+		// check for MTU update
+		if (!_isNullOrUndefined(settings.mtu)) {
+			debug('attempt setting mtu for interface %s', name);
+
+			result = await this::_ifconfig(name, 'mtu', settings.mtu);
+
+			debug(
+			'result of setting mtu for interface %s: %o',
+			name,
+			result);
+		}
+
+		// reload interface settings after applying them...
+		iface = await this::_ifconfig(name);
+
+		return this::_parseInterfaceInfo(iface)[0];
 	}
 
 	async listInterfaces () {
