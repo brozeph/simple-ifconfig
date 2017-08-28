@@ -422,8 +422,6 @@ export class NetworkInfo {
 
 		// check for ipv4 settings updates
 		if (!_isNullOrUndefined(settings.ipv4)) {
-			debug('attempt ipv4 settings update');
-
 			let
 				args = [name],
 				addr = settings.ipv4;
@@ -448,12 +446,14 @@ export class NetworkInfo {
 				args.push('netmask', addr.netmask);
 			}
 
-			result = await this::_ifconfig(...args);
+			if (args.length > 1) {
+				result = await this::_ifconfig(...args);
 
-			debug(
-				'result of ipv4 settings update to %s: %o',
-				name,
-				result);
+				debug(
+					'result of ipv4 settings update to %s: %o',
+					name,
+					result);
+			}
 		}
 
 		// check for MTU update
