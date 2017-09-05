@@ -28,6 +28,7 @@ Creates a new instance of the `NetworkInfo` class that allows for interaction wi
 * `ifconfigPath` (_optional_, `String`) - defaults to `/sbin/ifconfig` when not provided; defines the path to the `ifconfig` executable
 * `active` (_optional_, `Boolean`) - defaults to `true` when not provided; when `true`, only the interfaces that are connected and actively transmitting data are included
 * `internal` (_optional_, `Boolean`) - defaults to `false` when not provided; when `true`, internal (i.e. loopback, etc.) adapters are included when interacting with various other module methods
+* `verbose` (_optional_, `Booelan`) - defaults to `true` when not provided; when `true`, `ifconfig` is called with the verbose flag (`-v`) - on some distros (i.e. `Alpine Linux`) this flag is not supported and it is helpful to turn it off
 
 ```javascript
 import { NetworkInfo } from 'simple-ifconfig';
