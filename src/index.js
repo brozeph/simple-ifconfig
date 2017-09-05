@@ -16,7 +16,8 @@ const
 	DEFAULT_OPTIONS = {
 		active : true,
 		ifconfigPath : '/sbin/ifconfig',
-		internal : false
+		internal : false,
+		verbose : true
 	},
 	DEFAULT_METRIC = 99,
 	RE_DELIM = /\ |\:/,
@@ -475,7 +476,9 @@ export class NetworkInfo {
 	}
 
 	async listInterfaces () {
-		let result = await this::_ifconfig(VERBOSE);
+		let result = this.options.verbose ?
+			await this::_ifconfig(VERBOSE) :
+			await this::_ifconfig();
 
 		return this::_parseInterfaceInfo(result);
 	}

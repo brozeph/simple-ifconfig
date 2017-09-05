@@ -300,6 +300,21 @@ lo0: flags=8049<UP,LOOPBACK,RUNNING,MULTICAST> metric 0 mtu 16384
 					return done();
 				});
 		});
+
+		it('should properly omit verbose when false', (done) => {
+			let client = new lib.NetworkInfo({ verbose : false });
+
+			client
+				.listInterfaces()
+				.then(() => {
+					should.exist(commandsCalled);
+					should.exist(commandsCalled[0]);
+					commandsCalled[0].args.should.have.length(0);
+
+					return done();
+				})
+				.catch(done);
+		});
 	});
 
 	describe('#listInterfaces (bsd)', () => {

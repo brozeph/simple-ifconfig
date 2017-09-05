@@ -1,3 +1,7 @@
+# v0.2.1 - 09/02/2017
+
+* Added configuration to disable `verbose` for use on certain distros of Linux (i.e. Alpine)
+
 # v0.2.0 - 08/24/2017
 
 * Added `applySettings` command
