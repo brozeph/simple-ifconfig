@@ -1,10 +1,5 @@
-'use strict';
-
-import 'babel-polyfill';
-import 'source-map-support/register';
-
-import { spawn } from 'child_process';
 import logger from 'debug';
+import { spawn } from 'child_process';
 
 const
 	BASE_16 = 16,
@@ -13,13 +8,13 @@ const
 	DEFAULT_ACTIVE_DOWN = 'down',
 	DEFAULT_ACTIVE_UP = 'up',
 	DEFAULT_HARDWARE_ADDR = '00:00:00:00:00:00',
+	DEFAULT_METRIC = 99,
 	DEFAULT_OPTIONS = {
 		active : true,
 		ifconfigPath : '/sbin/ifconfig',
 		internal : false,
 		verbose : true
 	},
-	DEFAULT_METRIC = 99,
 	RE_DELIM = /\ |\:/,
 	// http://www-01.ibm.com/support/docview.wss?uid=isg3T1019709
 	// http://docs.oracle.com/cd/E19253-01/816-5166/6mbb1kq31/#INTERFACE%20FLAGS
@@ -57,8 +52,8 @@ const
 		pointopoint : /(^|[\ \t\,]*)pointopoint($|[\ \t\,]*)/i,
 		preferred : /(^|[\ \t\,]*)preferred($|[\ \t\,]*)/i,
 		private : /(^|[\ \t\,]*)private($|[\ \t\,]*)/i,
-		pseg : /(^|[\ \t\,]*)pseg($|[\ \t\,]*)/i,
 		promisc : /(^|[\ \t\,]*)promisc($|[\ \t\,]*)/i,
+		pseg : /(^|[\ \t\,]*)pseg($|[\ \t\,]*)/i,
 		quorumloss : /(^|[\ \t\,]*)quorumloss($|[\ \t\,]*)/i,
 		router : /(^|[\ \t\,]*)router($|[\ \t\,]*)/i,
 		running : /(^|[\ \t\,]*)running($|[\ \t\,]*)/i,
@@ -68,8 +63,8 @@ const
 		temporary : /(^|[\ \t\,]*)temporary($|[\ \t\,]*)/i,
 		unnumbered : /(^|[\ \t\,]*)unnumbered($|[\ \t\,]*)/i,
 		up : /(^|[\ \t\,]*)up($|[\ \t\,]*)/i,
-		virtual : /(^|[\ \t\,]*)virtual($|[\ \t\,]*)/i,
 		varmtu : /(^|[\ \t\,]*)var\_mtu($|[\ \t\,]*)/i,
+		virtual : /(^|[\ \t\,]*)virtual($|[\ \t\,]*)/i,
 		xresolv : /(^|[\ \t\,]*)xresolv($|[\ \t\,]*)/i
 	},
 	RE_HARDWARE_ADDR = /(ether|hwaddr)\ +(([0-9a-f]{2}[\:\-]{0,1}){6})/i,
@@ -92,26 +87,26 @@ const
 	RE_UNIX_STATUS_ACTIVE = /\ active$/i,
 	VERBOSE = '-v';
 
-function _ensureDefaultOptions () {
+function _ensureDefaultOptions (networkInfo) {
 	Object
 		.getOwnPropertyNames(DEFAULT_OPTIONS)
 		.forEach((optionName) => {
-			debug('examining option %s (%s)', optionName, this.options[optionName]);
-			if (_isNullOrUndefined(this.options[optionName])) {
+			debug('examining option %s (%s)', optionName, networkInfo.options[optionName]);
+			if (_isNullOrUndefined(networkInfo.options[optionName])) {
 				debug(
 					'applying default value for option %s (%o)',
 					optionName,
 					DEFAULT_OPTIONS[optionName]);
 
-				this.options[optionName] = DEFAULT_OPTIONS[optionName];
+				networkInfo.options[optionName] = DEFAULT_OPTIONS[optionName];
 			}
 		});
 }
 
-function _ifconfig (...args) {
+function _ifconfig (networkInfo, ...args) {
 	return new Promise((resolve, reject) => {
 		let
-			ifconfig = spawn(this.options.ifconfigPath, args),
+			ifconfig = spawn(networkInfo.options.ifconfigPath, args),
 			stderr = [],
 			stdout = [];
 
@@ -119,14 +114,14 @@ function _ifconfig (...args) {
 		ifconfig.on('close', (code) => {
 			debug(
 				'%s %s command completed (code: %s)',
-				this.options.ifconfigPath,
+				networkInfo.options.ifconfigPath,
 				args.join(' '),
 				code);
 
 			if (code) {
 				let err = new Error(stderr.join(''));
 				err.code = code;
-				err.command = [this.options.ifconfigPath].concat(args).join(' ');
+				err.command = [networkInfo.options.ifconfigPath].concat(args).join(' ');
 
 				return reject(err);
 			}
@@ -136,7 +131,7 @@ function _ifconfig (...args) {
 
 		// handle errors while attempting to execute command
 		ifconfig.on('error', (err) => {
-			err.command = [this.options.ifconfigPath].concat(args).join(' ');
+			err.command = [networkInfo.options.ifconfigPath].concat(args).join(' ');
 			debug('%s command failed (error: %s)', err.command, err.message);
 
 			return reject(err);
@@ -152,7 +147,7 @@ function _isNullOrUndefined (value) {
 	return value === null || typeof value === 'undefined';
 }
 
-function _parseInterfaceInfo (ifconfigResult) {
+function _parseInterfaceInfo (networkInfo, ifconfigResult) {
 	let
 		addr,
 		hardwareInterfaces = new Map(),
@@ -170,8 +165,8 @@ function _parseInterfaceInfo (ifconfigResult) {
 
 			// create new iface...
 			iface = {
-				hardwareAddress : DEFAULT_HARDWARE_ADDR,
 				active : false,
+				hardwareAddress : DEFAULT_HARDWARE_ADDR,
 				internal : true
 			};
 
@@ -346,9 +341,9 @@ function _parseInterfaceInfo (ifconfigResult) {
 	hardwareInterfaces.forEach((iface) => {
 		let include =
 			// filter out internal interfaces as applicable
-			(this.options.internal || !iface.internal) &&
+			(networkInfo.options.internal || !iface.internal) &&
 			// filter out non-active interfaces as applicable
-			(!this.options.active || iface.active);
+			(!networkInfo.options.active || iface.active);
 
 		if (include) {
 			result.push(iface);
@@ -368,7 +363,7 @@ export class NetworkInfo {
 
 		this._options = options || {};
 
-		this::_ensureDefaultOptions();
+		_ensureDefaultOptions(this);
 	}
 
 	async applySettings (name, settings) {
@@ -382,7 +377,7 @@ export class NetworkInfo {
 
 		// get the interface... if it does not exist, this will result in error
 		let
-			iface = await this::_ifconfig(name),
+			iface = await _ifconfig(this, name),
 			result;
 
 		// check to see if adapter should be enabled / disabled
@@ -393,9 +388,9 @@ export class NetworkInfo {
 				name);
 
 			if (settings.active) {
-				result = await this::_ifconfig(name, DEFAULT_ACTIVE_UP);
+				result = await _ifconfig(this, name, DEFAULT_ACTIVE_UP);
 			} else {
-				result = await this::_ifconfig(name, DEFAULT_ACTIVE_DOWN);
+				result = await _ifconfig(this, name, DEFAULT_ACTIVE_DOWN);
 			}
 
 			debug(
@@ -409,7 +404,8 @@ export class NetworkInfo {
 		if (!_isNullOrUndefined(settings.hardwareAddress)) {
 			debug('attempt setting hardware address for interface %s', name);
 
-			result = await this::_ifconfig(
+			result = await _ifconfig(
+				this,
 				name,
 				'hw',
 				'ether',
@@ -424,8 +420,8 @@ export class NetworkInfo {
 		// check for ipv4 settings updates
 		if (!_isNullOrUndefined(settings.ipv4)) {
 			let
-				args = [name],
-				addr = settings.ipv4;
+				addr = settings.ipv4,
+				args = [name];
 
 			// if an array, select the first object
 			if (Array.isArray(addr)) {
@@ -448,7 +444,7 @@ export class NetworkInfo {
 			}
 
 			if (args.length > 1) {
-				result = await this::_ifconfig(...args);
+				result = await _ifconfig(this, ...args);
 
 				debug(
 					'result of ipv4 settings update to %s: %o',
@@ -461,7 +457,7 @@ export class NetworkInfo {
 		if (!_isNullOrUndefined(settings.mtu)) {
 			debug('attempt setting mtu for interface %s', name);
 
-			result = await this::_ifconfig(name, 'mtu', settings.mtu);
+			result = await _ifconfig(this, name, 'mtu', settings.mtu);
 
 			debug(
 				'result of setting mtu for interface %s: %o',
@@ -470,17 +466,17 @@ export class NetworkInfo {
 		}
 
 		// reload interface settings after applying them...
-		iface = await this::_ifconfig(name);
+		iface = await _ifconfig(this, name);
 
-		return this::_parseInterfaceInfo(iface)[0];
+		return _parseInterfaceInfo(this, iface)[0];
 	}
 
 	async listInterfaces () {
 		let result = this.options.verbose ?
-			await this::_ifconfig(VERBOSE) :
-			await this::_ifconfig();
+			await _ifconfig(this, VERBOSE) :
+			await _ifconfig(this);
 
-		return this::_parseInterfaceInfo(result);
+		return _parseInterfaceInfo(this, result);
 	}
 
 	get options () {
@@ -488,4 +484,4 @@ export class NetworkInfo {
 	}
 }
 
-export default { NetworkInfo }
+export default { NetworkInfo };

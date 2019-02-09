@@ -1,6 +1,4 @@
 ---
-  ecmaFeatures:
-    modules: true
   env:
     browser: false
     es6: true
@@ -14,30 +12,18 @@
     - "babel"
   rules:
     array-bracket-spacing:
-      - 0 # disabled, see babel/array-bracket-spacing
+      - 2
       - "never"
     array-callback-return: 2
-    arrow-parens: 0 # disabled, see babel/arrow-parens
+    arrow-parens: 2
     arrow-spacing:
       - 2
       - before: true
         after: true
-    babel/array-bracket-spacing:
-      - 2
-      - "never"
-    babel/arrow-parens: 2
-    babel/flow-object-type: 2
-    babel/func-params-comma-dangle: 2
-    babel/generator-star-spacing:
-      - 2
-      - before: true
-        after: false
     babel/new-cap: 2
-    babel/no-await-in-loop: 2
     babel/object-curly-spacing:
       - 2
       - "always"
-    babel/object-shorthand: 2
     block-spacing:
       - 2
       - "always"
@@ -60,15 +46,17 @@
     default-case: 2
     eqeqeq: 2
     generator-star-spacing:
-      - 0 # disabled, see babel/generator-star-spacing
+      - 2
       - before: true
         after: false
     guard-for-in: 2
     handle-callback-err: 2
+    no-await-in-loop: 2
     no-caller: 2
     no-case-declarations: 2
     no-cond-assign: 2
     no-confusing-arrow: 2
+    no-console: 2
     no-const-assign: 2
     no-constant-condition: 2
     no-control-regex: 2
@@ -99,7 +87,7 @@
     no-implied-eval: 2
     no-inner-declarations: 2
     no-invalid-regexp: 2
-    no-invalid-this: 0 # using this:: notation which breaks this rule
+    no-invalid-this: 2
     no-irregular-whitespace: 2
     no-iterator: 2
     no-labels: 2
@@ -107,7 +95,7 @@
     no-loop-func: 2
     no-magic-numbers:
       - 2
-      - ignore: [-1, 0, 1]
+      - ignore: [-1, 0, 1, 2]
         ignoreArrayIndexes: true
     no-mixed-requires:
       - 0
@@ -151,10 +139,28 @@
     no-useless-concat: 2
     no-void: 2
     no-with: 2
+    object-shorthand: 2
     quotes:
       - 2
       - "single"
     radix: 2
+    semi: 2
+    sort-imports:
+      - 2
+      - ignoreCase: true
+        ignoreMemberSort: true
+    sort-keys:
+      - 2
+      - "asc"
+      - caseSensitive: false
+        natural: true
+    sort-vars:
+      - 2
+      - ignoreCase: true
+    space-before-function-paren:
+      - 2
+      - "always"
+    spaced-comment: ["error", "always"]
     use-isnan: 2
     valid-jsdoc: 2
     valid-typeof: 2

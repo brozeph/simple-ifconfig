@@ -1,3 +1,7 @@
+# v0.2.2 - 02/08/2019
+
+* Updated gulp and Babel dependencies
+
 # v0.2.1 - 09/02/2017
 
 * Added configuration to disable `verbose` for use on certain distros of Linux (i.e. Alpine)

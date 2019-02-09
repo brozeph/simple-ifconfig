@@ -2,7 +2,7 @@
   "name": "simple-ifconfig",
   "description": "a client library for interacting with ifconfig on *nix machines",
   "private": false,
-  "version": "0.2.1",
+  "version": "0.2.2",
   "author": "Joshua Thomas (http://github.com/brozeph)",
   "engine": "node >= 4",
   "keywords": [
@@ -18,33 +18,57 @@
   },
   "main": "./dist",
   "scripts": {
-    "prepublish": "gulp build",
-    "test": "gulp lint && gulp coveralls"
+    "lint": "gulp lint",
+    "posttest": "nyc report --reporter=text-lcov | coveralls",
+    "prepare": "gulp build",
+    "prepublish": "check-node-version --npm \">=4\" || npm run prepare",
+    "pretest": "gulp clean && gulp lint",
+    "test": "nyc mocha ./test",
+    "test-unit": "nyc mocha ./test"
   },
   "directories": {
     "test": "test"
   },
   "license": "MIT",
+  "nyc": {
+    "all": true,
+    "include": [
+      "src"
+    ],
+    "instrument": true,
+    "report-dir": "./reports",
+    "reporter": [
+      "lcov",
+      "text",
+      "text-summary"
+    ],
+    "require": [
+      "@babel/register"
+    ],
+    "sourceMap": true
+  },
   "dependencies": {
-    "babel-polyfill": "^6.16.0",
-    "debug": "^2.2.0",
-    "source-map-support": "^0.4.5"
+    "@babel/polyfill": "^7.2.5",
+    "@babel/runtime": "^7.3.1",
+    "debug": "^4.1.1"
   },
   "devDependencies": {
-    "babel-eslint": "^7.1.0",
-    "babel-preset-es2015": "^6.18.0",
-    "babel-preset-stage-0": "^6.16.0",
-    "chai": "^3.5.0",
-    "del": "^2.2.2",
-    "eslint-plugin-babel": "^3.3.0",
-    "gulp": "^3.9.1",
-    "gulp-babel": "^6.1.2",
-    "gulp-coveralls": "^0.1.4",
-    "gulp-eslint": "^3.0.1",
-    "gulp-istanbul": "^1.1.1",
-    "gulp-mocha": "^3.0.1",
-    "gulp-sourcemaps": "^2.2.0",
-    "gulp-util": "^3.0.7",
-    "mock-spawn": "^0.2.6"
+    "@babel/core": "^7.2.2",
+    "@babel/plugin-transform-runtime": "^7.2.0",
+    "@babel/preset-env": "^7.3.1",
+    "@babel/register": "^7.0.0",
+    "babel-cli": "^6.26.0",
+    "babel-eslint": "^10.0.1",
+    "chai": "^4.2.0",
+    "coveralls": "^3.0.2",
+    "eslint-plugin-babel": "^5.3.0",
+    "gulp": "^4.0.0",
+    "gulp-babel": "^8.0.0",
+    "gulp-clean": "^0.4.0",
+    "gulp-eslint": "^5.0.0",
+    "gulp-sourcemaps": "^2.6.4",
+    "mocha": "^5.2.0",
+    "mock-spawn": "^0.2.6",
+    "nyc": "^13.2.0"
   }
 }

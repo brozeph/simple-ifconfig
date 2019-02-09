@@ -1,30 +1,24 @@
-/*eslint babel/object-shorthand:0*/
-/*eslint no-magic-numbers:0*/
-/*eslint no-unused-expressions:0*/
+/* eslint no-magic-numbers: 0 */
+/* eslint no-unused-expressions: 0 */
 
-const
-	childProcess = require('child_process'),
+import chai from 'chai';
+import childProcess from 'child_process';
+import lib from '../src';
+import mockSpawn from 'mock-spawn';
 
-	chai = require('chai'),
-	mockSpawn = require('mock-spawn'),
-
-	lib = require('../dist'),
-
-	should = chai.should();
-
+const should = chai.should();
 
 describe('unit tests for simple-ifconfig', function () {
-	'use strict';
-
 	let
-		ifconfigMock = mockSpawn(),
 		commandsCalled = [],
+		ifconfigMock = mockSpawn(),
 		mockErr = '',
 		mockExitCode = 0,
 		mockOutput = '';
 
 		// override the child process to mock calls to spawn
 		childProcess.spawn = ifconfigMock;
+		/* eslint no-invalid-this: 0 */
 		ifconfigMock.setStrategy((command, args, opts) => {
 			// if error is the command, cause an exception
 			if (/error/.test(command)) {
@@ -40,9 +34,9 @@ describe('unit tests for simple-ifconfig', function () {
 
 			// track what was called
 			commandsCalled.push({
-				command : command,
-				args : args,
-				opts : opts
+				args,
+				command,
+				opts
 			});
 
 			// handle response
@@ -54,7 +48,7 @@ describe('unit tests for simple-ifconfig', function () {
 				}
 
 				return done(mockExitCode);
-			}
+			};
 		});
 
 	beforeEach(function () {
@@ -83,8 +77,8 @@ describe('unit tests for simple-ifconfig', function () {
 
 		it('should override options when specified', () => {
 			let client = new lib.NetworkInfo({
-				ifconfigPath : '/usr/local/bin/ifconfig',
 				active : false,
+				ifconfigPath : '/usr/local/bin/ifconfig',
 				internal : true
 			});
 
@@ -345,7 +339,7 @@ lo0: flags=8049<UP,LOOPBACK,RUNNING,MULTICAST> metric 0 mtu 16384
 				.listInterfaces()
 				.then((interfaces) => {
 					should.exist(interfaces);
-					interfaces.should.be.an.Array;
+					interfaces.should.be.an('array');
 					interfaces.should.have.length(1);
 
 					interfaces[0].hardwareAddress.should.equal('08:00:27:35:48:46');
@@ -383,7 +377,7 @@ lo0: flags=8049<UP,LOOPBACK,RUNNING,MULTICAST> metric 0 mtu 16384
 				.listInterfaces()
 				.then((interfaces) => {
 					should.exist(interfaces);
-					interfaces.should.be.an.Array;
+					interfaces.should.be.an('array');
 					interfaces.should.have.length(2);
 
 					return done();
@@ -471,7 +465,7 @@ enp1s0    Link encap:Ethernet  HWaddr 84:39:be:63:cd:85
 				.listInterfaces()
 				.then((interfaces) => {
 					should.exist(interfaces);
-					interfaces.should.be.an.Array;
+					interfaces.should.be.an('array');
 					interfaces.should.have.length(2);
 
 					interfaces[0].hardwareAddress.should.equal('20:c9:d0:c6:bd:5b');
@@ -509,7 +503,7 @@ enp1s0    Link encap:Ethernet  HWaddr 84:39:be:63:cd:85
 				.listInterfaces()
 				.then((interfaces) => {
 					should.exist(interfaces);
-					interfaces.should.be.an.Array;
+					interfaces.should.be.an('array');
 					interfaces.should.have.length(4);
 
 					return done();
@@ -673,7 +667,7 @@ en3: flags=8863<UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST> mtu 1500 index 8
 				.listInterfaces()
 				.then((interfaces) => {
 					should.exist(interfaces);
-					interfaces.should.be.an.Array;
+					interfaces.should.be.an('array');
 					interfaces.should.have.length(3);
 
 					interfaces[0].hardwareAddress.should.equal('28:cf:e9:17:99:a9');
@@ -712,7 +706,7 @@ en3: flags=8863<UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST> mtu 1500 index 8
 				.listInterfaces()
 				.then((interfaces) => {
 					should.exist(interfaces);
-					interfaces.should.be.an.Array;
+					interfaces.should.be.an('array');
 					interfaces.should.have.length(14);
 
 					return done();
