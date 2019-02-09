@@ -6,7 +6,7 @@ This module aims to provide additional information beyond what the `os.networkIn
 
 ## Requirements
 
-* `Node.js`: >= `v4.x`
+* `Node.js`: >= `v6.x`
 * `Platform`: `Darwin`, `Unix` or `Linux` (_Windows is not supported at this time_)
 
 ## Installation
