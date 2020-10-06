@@ -1,3 +1,7 @@
+# v0.2.3 - 10/06/2020
+
+* Updated dependencies
+
 # v0.2.2 - 02/08/2019
 
 * Updated gulp and Babel dependencies
